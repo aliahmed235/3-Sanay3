@@ -5,20 +5,18 @@ spring:
     password: ${DB_PASSWORD:Aa0552635037#}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 20000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   flyway:
-    enabled: true
-    baselineOnMigrate: true
-    baselineVersion: 0
-    locations: classpath:db/migration
-    validateOnMigrate: false
+    enabled: false
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
