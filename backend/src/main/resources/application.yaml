@@ -7,7 +7,7 @@ spring:
 
   flyway:
     enabled: true
-    baselineOnMigrate: true
+    baselineOnMigrate: false
     baselineVersion: 0
     locations: classpath:db/migration
     validateOnMigrate: false
