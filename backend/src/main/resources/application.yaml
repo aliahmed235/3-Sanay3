@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/sany3_db
-    username: root
-    password: Aa0552635037#
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:sany3_db}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:Aa0552635037#}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   flyway:
@@ -23,7 +23,7 @@ spring:
         format_sql: true
 
 jwt:
-  secret: mySecretKeyForSanay3ApplicationThatIsLongEnoughForHS256
+  secret: ${JWT_SECRET:mySecretKeyForSanay3ApplicationThatIsLongEnoughForHS256}
   access-token-expiry: 900000
   refresh-token-expiry: 604800000
 
