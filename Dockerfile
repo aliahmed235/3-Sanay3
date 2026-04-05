@@ -3,7 +3,6 @@ FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 COPY backend/pom.xml ./backend/
 COPY backend/src ./backend/src
-COPY backend/.mvn ./backend/.mvn
 COPY backend/mvnw ./backend/
 WORKDIR /app/backend
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests
