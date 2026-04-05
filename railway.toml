@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+mounts = ["/root/.m2"]
+
+[env]
+SPRING_DATASOURCE_URL = "jdbc:mysql://${{ Metadata.DatabaseURL }}/sany3_db"
+SPRING_DATASOURCE_USERNAME = "${{ Metadata.DatabaseUser }}"
+SPRING_DATASOURCE_PASSWORD = "${{ Metadata.DatabasePassword }}"
+
+[deploy]
+startCommand = "cd backend && java -jar target/graduation_project-0.0.1-SNAPSHOT.jar"

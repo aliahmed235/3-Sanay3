@@ -1,9 +1,0 @@
-{
-  "buildCommand": "cd backend && ./mvnw clean package -DskipTests",
-  "startCommand": "cd backend && java -jar target/graduation_project-0.0.1-SNAPSHOT.jar",
-  "envVars": {
-    "SPRING_DATASOURCE_URL": "jdbc:mysql://${{DATABASE_URL}}/sany3_db",
-    "SPRING_DATASOURCE_USERNAME": "${{DATABASE_USER}}",
-    "SPRING_DATASOURCE_PASSWORD": "${{DATABASE_PASSWORD}}"
-  }
-}
