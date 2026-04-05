@@ -3,8 +3,7 @@ FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app/backend
 COPY backend/pom.xml .
 COPY backend/src ./src
-COPY backend/mvnw .
-RUN chmod +x mvnw && ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
