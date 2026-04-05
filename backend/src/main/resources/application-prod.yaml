@@ -10,7 +10,7 @@ spring:
       connection-timeout: 10000
       idle-timeout: 60000
       max-lifetime: 300000
-      auto-commit: true
+      auto-commit: false
 
   flyway:
     enabled: true
