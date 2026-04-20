@@ -1,8 +1,16 @@
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
 # Miscellaneous
 *.class
 *.log
 *.pyc
-*.swp
 .DS_Store
 .atom/
 .build/
@@ -12,25 +20,27 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# Backend - Maven
+backend/target/
+backend/.mvn/
+backend/pom.xml.tag
+backend/pom.xml.releaseBackup
+backend/*.log
+backend/application-*.properties
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Frontend - Flutter (ignore build artifacts only, NOT the folder!)
+frontend/build/
+frontend/.dart_tool/
+frontend/pubspec.lock
+frontend/.packages
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
 /coverage/
 
 # Symbolication related
@@ -43,3 +53,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# OS
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Local files
+uploads/
