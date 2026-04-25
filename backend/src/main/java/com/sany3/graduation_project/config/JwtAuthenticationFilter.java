@@ -1,6 +1,6 @@
 package com.sany3.graduation_project.config;
 
-import com.sany3.graduation_project.Services.JwtService;
+import com.sany3.graduation_project.Services.JwtServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtServiceImpl;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -31,8 +31,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = getTokenFromRequest(request);
 
-            if (token != null && jwtService.validateToken(token)) {
-                Long userId = jwtService.getUserIdFromToken(token);
+            if (token != null && jwtServiceImpl.validateToken(token)) {
+                Long userId = jwtServiceImpl.getUserIdFromToken(token);
                 String rolesStr = extractRolesFromToken(token);
 
                 var authorities = Arrays.stream(rolesStr.split(","))
@@ -59,6 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractRolesFromToken(String token) {
-        return jwtService.getRolesFromToken(token);
+        return jwtServiceImpl.getRolesFromToken(token);
     }
 }
