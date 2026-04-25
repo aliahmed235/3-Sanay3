@@ -10,11 +10,13 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class JwtService {
+public class JwtServiceImpl implements JwtService {
 
     @Value("${jwt.secret:mySecretKeyForSanay3ApplicationThatIsLongEnoughForHS256}")
     private String jwtSecret;
@@ -25,6 +27,14 @@ public class JwtService {
     @Value("${jwt.refresh-token-expiry:604800000}")
     private long refreshTokenExpiry;
 
+    /**
+     * Token blacklist - stores tokens that have been logged out
+     * Uses ConcurrentHashMap for thread-safe operations
+     * In production, use Redis for distributed systems
+     */
+    private final Set<String> tokenBlacklist = ConcurrentHashMap.newKeySet();
+
+    @Override
     public String generateAccessToken(User user) {
         log.debug("Generating access token for user: {}", user.getId());
 
@@ -46,6 +56,7 @@ public class JwtService {
                 .compact();
     }
 
+    @Override
     public String generateRefreshToken(User user) {
         log.debug("Generating refresh token for user: {}", user.getId());
 
@@ -61,8 +72,16 @@ public class JwtService {
                 .compact();
     }
 
+    @Override
     public boolean validateToken(String token) {
         try {
+            // FIRST: Check if token is blacklisted
+            if (isTokenBlacklisted(token)) {
+                log.warn("Token is blacklisted (logged out)");
+                return false;
+            }
+
+            // THEN: Do normal validation
             Jwts.parser()
                     .verifyWith((SecretKey) getSigningKey())
                     .build()
@@ -82,6 +101,7 @@ public class JwtService {
         return false;
     }
 
+    @Override
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
@@ -91,6 +111,7 @@ public class JwtService {
         return Long.parseLong(claims.getSubject());
     }
 
+    @Override
     public String getEmailFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
@@ -100,6 +121,7 @@ public class JwtService {
         return claims.get("email", String.class);
     }
 
+    @Override
     public String getRolesFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
@@ -108,6 +130,22 @@ public class JwtService {
                 .getPayload();
         String roles = claims.get("roles", String.class);
         return roles != null ? roles : "";
+    }
+
+    @Override
+    public void blacklistToken(String token) {
+        log.info("Blacklisting token");
+        tokenBlacklist.add(token);
+
+        // Optional: Log size for monitoring
+        if (tokenBlacklist.size() % 100 == 0) {
+            log.info("Blacklist size: {}", tokenBlacklist.size());
+        }
+    }
+
+    @Override
+    public boolean isTokenBlacklisted(String token) {
+        return tokenBlacklist.contains(token);
     }
 
     private Key getSigningKey() {
