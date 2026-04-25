@@ -6,7 +6,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Repository for CustomerProfile entity
+ */
 @Repository
 public interface CustomerProfileRepository extends JpaRepository<CustomerProfile, Long> {
-    Optional<CustomerProfile> findByUser_Id(Long userId);
+
+    /**
+     * Find customer profile by user ID
+     * @param userId User ID
+     * @return CustomerProfile
+     */
+    Optional<CustomerProfile> findByUserId(Long userId);
 }
