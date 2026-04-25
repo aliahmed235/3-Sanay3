@@ -7,7 +7,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Repository for Role entity
+ */
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
+
+    /**
+     * Find role by name
+     * @param name Role name (USER, SERVICE_PROVIDER, ADMIN)
+     * @return Role if found
+     */
     Optional<Role> findByName(RoleType name);
 }
