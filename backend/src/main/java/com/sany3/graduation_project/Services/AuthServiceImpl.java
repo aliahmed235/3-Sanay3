@@ -1,6 +1,5 @@
 package com.sany3.graduation_project.Services;
 
-
 import com.sany3.graduation_project.Repositories.*;
 import com.sany3.graduation_project.dto.request.RegisterProviderRequest;
 import com.sany3.graduation_project.dto.request.RegisterRequest;
@@ -21,7 +20,7 @@ import java.math.BigDecimal;
 @Transactional
 @RequiredArgsConstructor
 @Slf4j
-public class AuthService {
+public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -29,9 +28,10 @@ public class AuthService {
     private final CustomerProfileRepository customerProfileRepository;
     private final ServiceProviderProfileRepository providerProfileRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final JwtService jwtService;  // ← Use interface type
     private final UserMapper userMapper;
 
+    @Override
     public LoginResponse registerCustomer(RegisterRequest request) {
         log.info("Registering customer: {}", request.getEmail());
 
@@ -51,6 +51,7 @@ public class AuthService {
         return generateLoginResponse(user);
     }
 
+    @Override
     public LoginResponse registerServiceProvider(RegisterProviderRequest request) {
         log.info("Registering service provider: {}", request.getEmail());
 
@@ -73,7 +74,7 @@ public class AuthService {
         return generateLoginResponse(user);
     }
 
-
+    @Override
     public LoginResponse login(String email, String password) {
         log.info("Login attempt for: {}", email);
 
@@ -92,7 +93,7 @@ public class AuthService {
         return generateLoginResponse(user);
     }
 
-
+    @Override
     public LoginResponse refreshToken(String refreshToken) {
         log.info("Token refresh attempt");
 
@@ -114,12 +115,20 @@ public class AuthService {
                 .build();
     }
 
-
+    @Override
     public void logout(String token) {
         log.info("Logout initiated");
+
+        // Remove "Bearer " prefix if present
+        String cleanToken = token;
+        if (token != null && token.startsWith("Bearer ")) {
+            cleanToken = token.substring(7);
+        }
+
+        // Blacklist the token
+        jwtService.blacklistToken(cleanToken);
+        log.info("Token successfully blacklisted");
     }
-
-
 
     private void validateUserDoesNotExist(String email, String phone) {
         if (userRepository.existsByEmail(email)) {
