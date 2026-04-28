@@ -1,93 +1,82 @@
 package com.sany3.graduation_project.Repositories;
 
-import com.sany3.graduation_project.entites.ServiceOffer;
 import com.sany3.graduation_project.entites.OfferStatus;
+import com.sany3.graduation_project.entites.ServiceOffer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for ServiceOffer entity
- */
 @Repository
 public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long> {
 
     /**
-     * Find all offers for a request
-     * Customer sees these to choose from
-     *
-     * @param requestId Request ID
-     * @param pageable Pagination
-     * @return Page of offers
+     * Get all offers for a specific request
      */
-    Page<ServiceOffer> findByRequestId(Long requestId, Pageable pageable);
+    List<ServiceOffer> findByRequestId(Long requestId);
 
     /**
-     * Find all PENDING offers for a request
-     *
-     * @param requestId Request ID
-     * @return List of pending offers (sorted by price)
-     */
-    @Query("SELECT so FROM ServiceOffer so " +
-            "WHERE so.request.id = :requestId " +
-            "AND so.status = 'PENDING' " +
-            "ORDER BY so.offeredPrice ASC, so.createdAt ASC")
-    List<ServiceOffer> findPendingOffersByRequest(@Param("requestId") Long requestId);
-
-    /**
-     * Find all offers by provider
-     * @param providerId Provider ID
-     * @param pageable Pagination
-     * @return Page of offers
+     * Get all offers from a provider (sorted by newest)
      */
     Page<ServiceOffer> findByProviderId(Long providerId, Pageable pageable);
 
     /**
-     * Find PENDING offers by provider
-     * Provider sees offers they made that are waiting
-     *
-     * @param providerId Provider ID
-     * @param pageable Pagination
-     * @return Page of pending offers
+     * Get all offers for a request paginated and sorted by newest first
      */
-    Page<ServiceOffer> findByProviderIdAndStatus(Long providerId,
-                                                 OfferStatus status,
-                                                 Pageable pageable);
+    Page<ServiceOffer> findByRequestIdOrderByCreatedAtDesc(Long requestId, Pageable pageable);
 
     /**
-     * Check if provider already made an offer for this request
-     * Prevents duplicate offers
-     *
-     * @param requestId Request ID
-     * @param providerId Provider ID
-     * @return true if offer exists
+     * Get open offers for a request (PENDING status)
      */
-    boolean existsByRequestIdAndProviderId(Long requestId, Long providerId);
+    List<ServiceOffer> findByRequestIdAndStatus(Long requestId, OfferStatus status);
 
     /**
-     * Find provider's offer for a request
-     *
-     * @param requestId Request ID
-     * @param providerId Provider ID
-     * @return Offer if exists
+     * Check if provider already offered on a request
+     * Returns true if exists, false otherwise
      */
-    Optional<ServiceOffer> findByRequestIdAndProviderId(Long requestId, Long providerId);
+    Boolean existsByRequestIdAndProviderId(Long requestId, Long providerId);
 
     /**
-     * Find accepted offer for a request
-     * There should only be ONE accepted offer per request
-     *
-     * @param requestId Request ID
-     * @return Accepted offer
+     * Get accepted offer for a request
      */
-    @Query("SELECT so FROM ServiceOffer so " +
-            "WHERE so.request.id = :requestId " +
-            "AND so.status = 'ACCEPTED'")
-    Optional<ServiceOffer> findAcceptedOfferByRequest(@Param("requestId") Long requestId);
+    Optional<ServiceOffer> findByRequestIdAndStatusOrderByCreatedAtAsc(Long requestId, OfferStatus status);
+
+    /**
+     * Count total offers by provider
+     */
+    Long countByProviderId(Long providerId);
+
+    /**
+     * Get provider's accepted offers (active jobs)
+     */
+    List<ServiceOffer> findByProviderIdAndStatus(Long providerId, OfferStatus status);
+
+    /**
+     * Get all pending offers for a request
+     * Used when rejecting/accepting offers
+     */
+    @Query("SELECT so FROM ServiceOffer so WHERE so.request.id = :requestId AND so.status = 'PENDING'")
+    List<ServiceOffer> findPendingOffersByRequest(@Param("requestId") Long requestId);
+
+    /**
+     * Get highest priced offer for a request
+     */
+    @Query("SELECT so FROM ServiceOffer so WHERE so.request.id = :requestId ORDER BY so.offeredPrice DESC LIMIT 1")
+    Optional<ServiceOffer> findHighestPricedOffer(@Param("requestId") Long requestId);
+
+    /**
+     * Get lowest priced offer for a request
+     */
+    @Query("SELECT so FROM ServiceOffer so WHERE so.request.id = :requestId ORDER BY so.offeredPrice ASC LIMIT 1")
+    Optional<ServiceOffer> findLowestPricedOffer(@Param("requestId") Long requestId);
+
+    /**
+     * Get average offer price for a request
+     */
+    @Query("SELECT AVG(so.offeredPrice) FROM ServiceOffer so WHERE so.request.id = :requestId")
+    Double getAverageOfferPrice(@Param("requestId") Long requestId);
 }
