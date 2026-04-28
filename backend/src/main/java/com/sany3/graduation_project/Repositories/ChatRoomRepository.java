@@ -1,43 +1,41 @@
 package com.sany3.graduation_project.Repositories;
 
 import com.sany3.graduation_project.entites.ChatRoom;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for ChatRoom entity
- */
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     /**
-     * Find chat room by request ID
-     * One-to-one relationship
-     *
-     * @param requestId Request ID
-     * @return ChatRoom if exists
+     * Find chat room for a specific request
+     * Since 1 request = 1 chat room
      */
     Optional<ChatRoom> findByRequestId(Long requestId);
 
     /**
-     * Find all chat rooms for a user (either as customer or provider)
-     * @param customerId User ID
-     * @param pageable Pagination
-     * @return Page of chat rooms
+     * Get all chat rooms for a user (either as customer or provider)
      */
-    Page<ChatRoom> findByCustomerIdOrProviderId(Long customerId,
-                                                Long providerId,
-                                                Pageable pageable);
+    @Query("SELECT cr FROM ChatRoom cr WHERE cr.customer.id = :userId OR cr.provider.id = :userId ORDER BY cr.createdAt DESC")
+    List<ChatRoom> findUserChatRooms(@Param("userId") Long userId);
 
     /**
-     * Find chat room between specific customer and provider
-     * @param customerId Customer ID
-     * @param providerId Provider ID
-     * @return ChatRoom if exists
+     * Get all chat rooms for a user as customer
      */
-    Optional<ChatRoom> findByCustomerIdAndProviderId(Long customerId, Long providerId);
+    List<ChatRoom> findByCustomerId(Long customerId);
+
+    /**
+     * Get all chat rooms for a user as provider
+     */
+    List<ChatRoom> findByProviderId(Long providerId);
+
+    /**
+     * Find chat between specific customer and provider for a request
+     */
+    Optional<ChatRoom> findByCustomerIdAndProviderIdAndRequestId(
+            Long customerId, Long providerId, Long requestId);
 }
