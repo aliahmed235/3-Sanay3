@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -18,7 +20,12 @@ public class UserResponse {
     private String name;
     private String email;
     private String phone;
-    private Set<String> roles;
-    private Boolean isActive;
+    private String address;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
     private String profileImage;
+    private Boolean isActive;
+    private Set<String> roles;
+    private String profilePictureUrl;
+    private LocalDateTime createdAt;
 }
