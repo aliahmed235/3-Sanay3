@@ -7,110 +7,61 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for User entity
- * Handles database operations for users (customers & providers)
- */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
-     * Find user by email
-     * @param email User's email
-     * @return User if found
+     * Find user by email (for login)
      */
     Optional<User> findByEmail(String email);
 
     /**
      * Find user by phone
-     * @param phone User's phone number
-     * @return User if found
      */
     Optional<User> findByPhone(String phone);
 
     /**
-     * Check if email already exists
-     * @param email Email to check
-     * @return true if exists
+     * Check if email exists
      */
-    boolean existsByEmail(String email);
+    Boolean existsByEmail(String email);
 
     /**
-     * Check if phone already exists
-     * @param phone Phone to check
-     * @return true if exists
+     * Check if phone exists
      */
-    boolean existsByPhone(String phone);
+    Boolean existsByPhone(String phone);
 
     /**
-     * Find all service providers (users with SERVICE_PROVIDER role)
-     * @param pageable Pagination info
-     * @return Page of providers
+     * Find all active users
      */
-    @Query("SELECT u FROM User u JOIN u.userRoles ur JOIN ur.role r " +
-            "WHERE r.name = 'SERVICE_PROVIDER'")
-    Page<User> findAllServiceProviders(Pageable pageable);
+    List<User> findByIsActiveTrue();
 
     /**
-     * Find all customers
-     * @param pageable Pagination info
-     * @return Page of customers
+     * Find all providers (users with PROVIDER role)
+     * Joins with user_roles table
      */
-    @Query("SELECT u FROM User u JOIN u.userRoles ur JOIN ur.role r " +
-            "WHERE r.name = 'USER'")
-    Page<User> findAllCustomers(Pageable pageable);
+    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'PROVIDER'")
+    List<User> findAllProviders();
 
     /**
-     * Find providers near a location (within radius in km)
-     * Uses Haversine formula for distance calculation
-     *
-     * @param latitude Customer's latitude
-     * @param longitude Customer's longitude
-     * @param radiusKm Search radius in kilometers
-     * @return List of nearby providers
+     * Find all customers (users with CUSTOMER role)
+     * Joins with user_roles table
      */
-    @Query(value = "SELECT u.* FROM users u " +
-            "JOIN user_roles ur ON u.id = ur.user_id " +
-            "JOIN roles r ON ur.role_id = r.id " +
-            "WHERE r.name = 'SERVICE_PROVIDER' " +
-            "AND u.is_active = true " +
-            "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) * " +
-            "cos(radians(u.longitude) - radians(:longitude)) + " +
-            "sin(radians(:latitude)) * sin(radians(u.latitude)))) <= :radiusKm",
-            nativeQuery = true)
-    List<User> findProvidersNearby(@Param("latitude") BigDecimal latitude,
-                                   @Param("longitude") BigDecimal longitude,
-                                   @Param("radiusKm") Double radiusKm);
+    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'CUSTOMER'")
+    List<User> findAllCustomers();
 
     /**
-     * Find providers by service type near a location
-     *
-     * @param serviceType Type of service (GAS, WATER, ELECTRICITY)
-     * @param latitude Customer's latitude
-     * @param longitude Customer's longitude
-     * @param radiusKm Search radius in kilometers
-     * @return List of matching providers
+     * Search users by name
      */
-    @Query(value = "SELECT u.* FROM users u " +
-            "JOIN user_roles ur ON u.id = ur.user_id " +
-            "JOIN roles r ON ur.role_id = r.id " +
-            "JOIN service_provider_profiles spp ON u.id = spp.user_id " +
-            "WHERE r.name = 'SERVICE_PROVIDER' " +
-            "AND u.is_active = true " +
-            "AND spp.service_type = :serviceType " +
-            "AND spp.is_verified = true " +
-            "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) * " +
-            "cos(radians(u.longitude) - radians(:longitude)) + " +
-            "sin(radians(:latitude)) * sin(radians(u.latitude)))) <= :radiusKm",
-            nativeQuery = true)
-    List<User> findProvidersByServiceTypeNearby(
-            @Param("serviceType") String serviceType,
-            @Param("latitude") BigDecimal latitude,
-            @Param("longitude") BigDecimal longitude,
-            @Param("radiusKm") Double radiusKm);
+    Page<User> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    /**
+     * Get top rated providers
+     */
+    @Query("SELECT u FROM User u WHERE u.id IN " +
+            "(SELECT r.provider.id FROM Rating r WHERE r.provider.id IS NOT NULL " +
+            "GROUP BY r.provider.id ORDER BY AVG(r.finalRating) DESC LIMIT :limit)")
+    List<User> findTopRatedProviders(@Param("limit") int limit);
 }
