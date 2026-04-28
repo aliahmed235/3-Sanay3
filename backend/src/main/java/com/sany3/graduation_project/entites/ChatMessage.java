@@ -6,24 +6,22 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * Chat Message Entity
- * Individual messages between customer and provider
+ * Individual message in a chat room
  *
- * Supports different message types:
- * - TEXT: Regular text message
- * - LOCATION: GPS coordinates (provider shares location)
- * - PHOTO: Image file (future feature)
+ * Types of messages:
+ * 1. TEXT: "I'll be there in 10 minutes"
+ * 2. LOCATION: "Here's my current location" (lat/long)
+ * 3. IMAGE: "Photo of the problem"
  *
- * Example messages:
- *   Hassan: "Hi Ali! I'm getting ready now" (TEXT)
- *   Ali: "Great! I'm at home" (TEXT)
- *   Hassan: (shares GPS location) (LOCATION)
- *   Hassan: "I'm outside your gate" (TEXT)
+ * Example:
+ *   Provider sends: "I'm 5 minutes away"
+ *   → ChatMessage created, stored in DB
+ *   → Sent to customer via WebSocket (real-time)
  */
 @Entity
 @Table(name = "chat_messages", indexes = {
@@ -43,9 +41,8 @@ public class ChatMessage {
 
     /**
      * Which chat room does this message belong to?
-     * Many messages in one room
      *
-     * Example: ChatRoom #999 has 25 messages
+     * Example: ChatRoom #789 (for Request #456)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_room_id", nullable = false)
@@ -53,61 +50,59 @@ public class ChatMessage {
 
     /**
      * Who sent this message?
-     * Either customer or provider
+     * Can be customer or provider
      *
-     * Example: Hassan Khan sent this
+     * Example: Hassan Khan (provider)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
     /**
-     * The actual message content
-     * Text, coordinates, or file reference depending on type
+     * The message text/content
+     * Can be:
+     * - "I'm on my way"
+     * - "URL to image"
+     * - "Image description"
      *
-     * Examples:
-     *   TEXT: "I'm on my way"
-     *   LOCATION: "24.7898,67.0345" (lat,lng)
-     *   PHOTO: "/uploads/photo_123.jpg"
+     * Max 1000 characters
      */
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
     /**
-     * Type of message:
-     * - TEXT: Regular text message
-     * - LOCATION: GPS coordinates
-     * - PHOTO: Image file
+     * Type of message
+     * TEXT, LOCATION, IMAGE
+     *
+     * Example: TEXT
      */
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(name = "message_type", nullable = false)
     private ChatMessageType messageType;
 
     /**
-     * Latitude (for LOCATION type messages)
-     * Null for TEXT messages
+     * If message type is LOCATION, store latitude
      *
-     * Example: 24.7898 (provider's current location)
+     * Example: 24.8607 (Karachi)
      */
-    @Column(precision = 10, scale = 8)
+    @Column(name = "latitude", precision = 10, scale = 8)
     private BigDecimal latitude;
 
     /**
-     * Longitude (for LOCATION type messages)
-     * Null for TEXT messages
+     * If message type is LOCATION, store longitude
      *
-     * Example: 67.0345 (provider's current location)
+     * Example: 67.0011 (Karachi)
      */
-    @Column(precision = 10, scale = 8)
+    @Column(name = "longitude", precision = 11, scale = 8)
     private BigDecimal longitude;
 
     /**
      * When was this message sent?
-     * Auto-set by Hibernate
+     * Auto-set, never changes
      *
-     * Used to sort messages in chronological order
+     * Example: 2026-04-25T14:30:00
      */
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
