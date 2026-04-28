@@ -1,7 +1,7 @@
 package com.sany3.graduation_project.Repositories;
 
-import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.RequestStatus;
+import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.ServiceType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,76 +9,72 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Repository for ServiceRequest entity
- */
 @Repository
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
 
     /**
-     * Find all requests by customer
-     * @param customerId Customer ID
-     * @param pageable Pagination
-     * @return Page of requests
+     * Get all requests by a customer
      */
     Page<ServiceRequest> findByCustomerId(Long customerId, Pageable pageable);
 
     /**
-     * Find all OPEN requests by service type
-     * Used to show available requests to providers
-     *
-     * @param serviceType Type of service (GAS, WATER, ELECTRICITY)
-     * @param pageable Pagination
-     * @return Page of open requests
+     * Get open requests (available for providers)
      */
-    Page<ServiceRequest> findByServiceTypeAndStatus(ServiceType serviceType,
-                                                    RequestStatus status,
-                                                    Pageable pageable);
+    List<ServiceRequest> findByStatus(RequestStatus status);
 
     /**
-     * Find all OPEN requests near a location
-     * Providers see these on their map
-     *
-     * @param latitude Provider's latitude
-     * @param longitude Provider's longitude
-     * @param radiusKm Search radius in kilometers
-     * @param status Request status (usually OPEN)
-     * @return List of nearby open requests
+     * Get requests by service type
      */
-    @Query(value = "SELECT sr.* FROM service_requests sr " +
-            "WHERE sr.status = :status " +
-            "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(sr.latitude)) * " +
-            "cos(radians(sr.longitude) - radians(:longitude)) + " +
-            "sin(radians(:latitude)) * sin(radians(sr.latitude)))) <= :radiusKm " +
-            "ORDER BY sr.created_at DESC",
-            nativeQuery = true)
-    List<ServiceRequest> findOpenRequestsNearby(
+    Page<ServiceRequest> findByServiceType(ServiceType serviceType, Pageable pageable);
+
+    /**
+     * Get requests by service type and status
+     * Used to show providers open work in their category
+     */
+    Page<ServiceRequest> findByServiceTypeAndStatus(ServiceType serviceType, RequestStatus status, Pageable pageable);
+
+    /**
+     * Get active requests (OPEN, ACCEPTED)
+     */
+    @Query("SELECT sr FROM ServiceRequest sr WHERE sr.status IN ('OPEN', 'ACCEPTED') ORDER BY sr.createdAt DESC")
+    List<ServiceRequest> findActiveRequests();
+
+    /**
+     * Get requests accepted by a provider
+     */
+    List<ServiceRequest> findByAcceptedProviderId(Long providerId);
+
+    /**
+     * Get completed requests for a provider (for ratings)
+     */
+    @Query("SELECT sr FROM ServiceRequest sr WHERE sr.acceptedProvider.id = :providerId AND sr.status = 'COMPLETED'")
+    List<ServiceRequest> findCompletedRequestsByProvider(@Param("providerId") Long providerId);
+
+    /**
+     * Find open requests near a location (within radius)
+     * Used for map filtering
+     * Calculation: distance in km = SQRT(lat_diff^2 + lon_diff^2) * 111
+     */
+
+    @Query(value = "SELECT sr.* FROM service_request sr WHERE " +
+            "SQRT(POW(sr.latitude - :latitude, 2) + POW(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
+            "AND sr.status = 'OPEN'", nativeQuery = true)
+    List<ServiceRequest> findRequestsNearby(
             @Param("latitude") BigDecimal latitude,
             @Param("longitude") BigDecimal longitude,
-            @Param("radiusKm") Double radiusKm,
-            @Param("status") String status);
+            @Param("radiusKm") Double radiusKm);
 
     /**
-     * Find open requests by service type near a location
-     *
-     * @param serviceType Type of service
-     * @param latitude Provider's latitude
-     * @param longitude Provider's longitude
-     * @param radiusKm Search radius in kilometers
-     * @return List of matching open requests
+     * Find open requests by service type and nearby location
+     * For provider map view (filtered by service type + distance)
      */
-    @Query(value = "SELECT sr.* FROM service_requests sr " +
-            "WHERE sr.status = 'OPEN' " +
-            "AND sr.service_type = :serviceType " +
-            "AND sr.expires_at > NOW() " +
-            "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(sr.latitude)) * " +
-            "cos(radians(sr.longitude) - radians(:longitude)) + " +
-            "sin(radians(:latitude)) * sin(radians(sr.latitude)))) <= :radiusKm " +
+    @Query(value = "SELECT sr FROM service_requests sr " +
+            "WHERE sr.service_type = :serviceType " +
+            "AND sr.status = 'OPEN' " +
+            "AND SQRT(POW(sr.latitude - :latitude, 2) + POW(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
             "ORDER BY sr.created_at DESC",
             nativeQuery = true)
     List<ServiceRequest> findOpenRequestsByServiceTypeNearby(
@@ -89,18 +85,13 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
     /**
      * Find expired OPEN requests
-     * Used to auto-cancel old requests
-     *
-     * @return List of expired requests
+     * Used by scheduled task to auto-cancel old requests
      */
-    @Query("SELECT sr FROM ServiceRequest sr " +
-            "WHERE sr.status = 'OPEN' AND sr.expiresAt < NOW()")
+    @Query("SELECT sr FROM ServiceRequest sr WHERE sr.status = 'OPEN' AND sr.expiresAt < CURRENT_TIMESTAMP")
     List<ServiceRequest> findExpiredOpenRequests();
 
     /**
-     * Count OPEN requests by service type
-     * @param serviceType Type of service
-     * @return Number of open requests
+     * Check if customer has active requests
      */
-    Long countByServiceTypeAndStatus(ServiceType serviceType, RequestStatus status);
+    Long countByCustomerIdAndStatusIn(Long customerId, List<RequestStatus> statuses);
 }
