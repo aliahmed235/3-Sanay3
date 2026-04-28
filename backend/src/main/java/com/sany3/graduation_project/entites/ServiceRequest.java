@@ -83,24 +83,18 @@ public class ServiceRequest {
      * Range: -90 to 90
      * Example: 24.7898
      */
-    @Column(precision = 10, scale = 8, nullable = false)
+    @Column(columnDefinition = "DECIMAL(10, 8)", nullable = false)
     private BigDecimal latitude;
 
-    /**
-     * Longitude of service location 📍
-     * Range: -180 to 180
-     * Example: 67.0345
-     */
-    @Column(precision = 10, scale = 8, nullable = false)
+    @Column(columnDefinition = "DECIMAL(10, 8)", nullable = false)
     private BigDecimal longitude;
+
 
     /**
      * Budget - what customer is willing to pay
      * Optional: customer might not set this
      * Example: 1000 PKR
      */
-    @Column(precision = 10, scale = 2)
-    private BigDecimal budget;
 
     /**
      * Request Status:
