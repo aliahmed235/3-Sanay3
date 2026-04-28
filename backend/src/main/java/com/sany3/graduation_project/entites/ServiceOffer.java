@@ -23,13 +23,22 @@ import java.time.LocalDateTime;
  * Customer chooses the best one!
  */
 @Entity
-@Table(name = "service_offers", indexes = {
-        @Index(name = "idx_request_id", columnList = "request_id"),
-        @Index(name = "idx_provider_id", columnList = "provider_id"),
-        @Index(name = "idx_status", columnList = "status"),
-        @Index(name = "idx_created_at", columnList = "created_at"),
-        @Index(name = "idx_request_provider", columnList = "request_id, provider_id")
-})
+@Table(
+        name = "service_offers",
+        indexes = {
+                @Index(name = "idx_request_id", columnList = "request_id"),
+                @Index(name = "idx_provider_id", columnList = "provider_id"),
+                @Index(name = "idx_status", columnList = "status"),
+                @Index(name = "idx_created_at", columnList = "created_at"),
+                @Index(name = "idx_request_provider", columnList = "request_id, provider_id")
+        },
+        uniqueConstraints = {  // ← ADD THIS
+                @UniqueConstraint(
+                        name = "uk_request_provider_unique",
+                        columnNames = {"request_id", "provider_id"}
+                )
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
