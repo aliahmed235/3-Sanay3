@@ -54,23 +54,22 @@ public class RatingCalculator {
     public static Double calculateTotalPenalty(Rating rating) {
         double totalPenalty = 0.0;
 
-        // Penalty 1: Cancellation
-        if (rating.getCancellationPenalty() != null && rating.getCancellationPenalty()) {
-            totalPenalty += 0.5;
-            log.debug("Applied cancellation penalty: -0.5");
+        // Penalty 1: Cancellation (now Double, 0.0 or 0.5)
+        if (rating.getCancellationPenalty() != null && rating.getCancellationPenalty() > 0) {
+            totalPenalty += rating.getCancellationPenalty();
+            log.debug("Applied cancellation penalty: -{}", rating.getCancellationPenalty());
         }
 
-        // Penalty 2: Late Arrival
-        if (rating.getLateArrivalPenalty() != null && rating.getLateArrivalPenalty()) {
-            double lateArrivalPenalty = calculateLateArrivalPenalty(rating.getMinutesLate());
-            totalPenalty += lateArrivalPenalty;
-            log.debug("Applied late arrival penalty: -{}", lateArrivalPenalty);
+        // Penalty 2: Late Arrival (now Double, 0.0 or penalty amount)
+        if (rating.getLateArrivalPenalty() != null && rating.getLateArrivalPenalty() > 0) {
+            totalPenalty += rating.getLateArrivalPenalty();
+            log.debug("Applied late arrival penalty: -{}", rating.getLateArrivalPenalty());
         }
 
-        // Penalty 3: Incomplete Service
-        if (rating.getIncompleteServicePenalty() != null && rating.getIncompleteServicePenalty()) {
-            totalPenalty += 1.0;
-            log.debug("Applied incomplete service penalty: -1.0");
+        // Penalty 3: Incomplete Service (now Double, 0.0 or 1.0)
+        if (rating.getIncompleteServicePenalty() != null && rating.getIncompleteServicePenalty() > 0) {
+            totalPenalty += rating.getIncompleteServicePenalty();
+            log.debug("Applied incomplete service penalty: -{}", rating.getIncompleteServicePenalty());
         }
 
         return totalPenalty;
