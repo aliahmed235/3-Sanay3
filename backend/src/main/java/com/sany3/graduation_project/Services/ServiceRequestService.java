@@ -12,7 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
+import  com.sany3.graduation_project.Repositories.ServiceOfferRepository;
+import com.sany3.graduation_project.Repositories.ChatRoomRepository;
+import com.sany3.graduation_project.Repositories.RatingRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,6 +56,7 @@ public class ServiceRequestService {
                 .description(request.getDescription())
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .status(RequestStatus.OPEN)
                 .expiresAt(expiryAt)
                 .build();
