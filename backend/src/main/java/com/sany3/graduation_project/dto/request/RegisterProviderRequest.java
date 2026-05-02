@@ -52,6 +52,10 @@ public class RegisterProviderRequest {
     @NotNull(message = "Service type is required")
     ServiceType serviceType;
 
+    @NotBlank(message = "National ID is required")
+    @Pattern(regexp = "^[0-9]{14}$", message = "National ID must be exactly 14 digits")
+    private String nationalId;
+
     @NotNull(message = "Hourly rate is required")
     @DecimalMin(value = "0.01", message = "Hourly rate must be at least 0.01")
     @DecimalMax(value = "10000.00", message = "Hourly rate cannot exceed 10000")
@@ -68,13 +72,18 @@ public class RegisterProviderRequest {
             message = "Address must not exceed 255 characters")
     private String address;
 
-    @NotNull(message = "Latitude is required")
     @DecimalMin(value = "-90", message = "Latitude must be between -90 and 90")
     @DecimalMax(value = "90", message = "Latitude must be between -90 and 90")
     private BigDecimal latitude;
 
-    @NotNull(message = "Longitude is required")
     @DecimalMin(value = "-180", message = "Longitude must be between -180 and 180")
     @DecimalMax(value = "180", message = "Longitude must be between -180 and 180")
     private BigDecimal longitude;
+
+    @Builder.Default
+    private Boolean hasCriminalRecord = false;
+
+    private String profileImageUrl;
+
+    private String criminalHistoryDocumentUrl;
 }
