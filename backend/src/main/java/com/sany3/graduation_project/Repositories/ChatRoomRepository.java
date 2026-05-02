@@ -38,4 +38,10 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
      */
     Optional<ChatRoom> findByCustomerIdAndProviderIdAndRequestId(
             Long customerId, Long providerId, Long requestId);
+
+    /**
+     * Check if a user is one of the two participants in a chat room.
+     */
+    @Query("SELECT COUNT(cr) FROM ChatRoom cr WHERE cr.id = :roomId AND (cr.customer.id = :userId OR cr.provider.id = :userId)")
+    Long countRoomMembership(@Param("roomId") Long roomId, @Param("userId") Long userId);
 }
