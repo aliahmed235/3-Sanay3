@@ -4,6 +4,7 @@ import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.dto.response.ServiceRequestResponse;
 import com.sany3.graduation_project.entites.ServiceRequest;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,8 +18,13 @@ public class ServiceRequestMapper {
         if (request == null) return null;
 
         RatingResponse ratingResponse = null;
-        if (request.getRating() != null) {
+        if (Hibernate.isInitialized(request.getRating()) && request.getRating() != null) {
             ratingResponse = ratingMapper.toRatingResponse(request.getRating());
+        }
+
+        Long offerCount = null;
+        if (Hibernate.isInitialized(request.getOffers()) && request.getOffers() != null) {
+            offerCount = (long) request.getOffers().size();
         }
 
         return ServiceRequestResponse.builder()
@@ -37,7 +43,7 @@ public class ServiceRequestMapper {
                 .completedAt(request.getCompletedAt())
                 .createdAt(request.getCreatedAt())
                 .expiresAt(request.getExpiresAt())
-                .offerCount((long) (request.getOffers() != null ? request.getOffers().size() : 0))
+                .offerCount(offerCount)
                 .rating(ratingResponse)
                 .build();
     }
