@@ -5,6 +5,7 @@ import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.ServiceType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,9 +16,14 @@ import java.util.List;
 @Repository
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
 
+    @Override
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
+    java.util.Optional<ServiceRequest> findById(Long id);
+
     /**
      * Get all requests by a customer
      */
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
     Page<ServiceRequest> findByCustomerId(Long customerId, Pageable pageable);
 
     /**
@@ -28,12 +34,14 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     /**
      * Get requests by service type
      */
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
     Page<ServiceRequest> findByServiceType(ServiceType serviceType, Pageable pageable);
 
     /**
      * Get requests by service type and status
      * Used to show providers open work in their category
      */
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
     Page<ServiceRequest> findByServiceTypeAndStatus(ServiceType serviceType, RequestStatus status, Pageable pageable);
 
     /**
@@ -71,14 +79,14 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
      * Find open requests by service type and nearby location
      * For provider map view (filtered by service type + distance)
      */
-    @Query(value = "SELECT sr.* FROM service_requests sr " +
-            "WHERE sr.service_type = :serviceType " +
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
+    @Query("SELECT sr FROM ServiceRequest sr " +
+            "WHERE sr.serviceType = :serviceType " +
             "AND sr.status = 'OPEN' " +
-            "AND SQRT(POW(sr.latitude - :latitude, 2) + POW(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
-            "ORDER BY sr.created_at DESC",
-            nativeQuery = true)
+            "AND SQRT(POWER(sr.latitude - :latitude, 2) + POWER(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
+            "ORDER BY sr.createdAt DESC")
     List<ServiceRequest> findOpenRequestsByServiceTypeNearby(
-            @Param("serviceType") String serviceType,
+            @Param("serviceType") ServiceType serviceType,
             @Param("latitude") BigDecimal latitude,
             @Param("longitude") BigDecimal longitude,
             @Param("radiusKm") Double radiusKm);
