@@ -4,6 +4,7 @@ import com.sany3.graduation_project.dto.request.LoginRequest;
 import com.sany3.graduation_project.dto.request.RegisterProviderRequest;
 import com.sany3.graduation_project.dto.request.RegisterRequest;
 import com.sany3.graduation_project.dto.response.LoginResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Authentication Service Interface
@@ -24,6 +25,11 @@ public interface AuthService {
      * @return LoginResponse with JWT tokens
      */
     LoginResponse registerServiceProvider(RegisterProviderRequest request);
+
+    LoginResponse registerServiceProvider(
+            RegisterProviderRequest request,
+            MultipartFile profilePicture,
+            MultipartFile criminalHistory);
 
     /**
      * Login user with email and password
