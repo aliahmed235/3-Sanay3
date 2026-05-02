@@ -51,6 +51,12 @@ public class ChatService {
                 .orElseThrow(() -> new ResourceNotFoundException("Chat room not found"));
     }
 
+    public void validateUserAccess(Long chatRoomId, Long userId) {
+        if (chatRoomRepository.countRoomMembership(chatRoomId, userId) == 0) {
+            throw new IllegalArgumentException("User is not part of this chat room");
+        }
+    }
+
     /**
      * Get all chat rooms for a user
      * Shows list of all conversations (customer can chat with multiple providers)
@@ -215,7 +221,8 @@ public class ChatService {
      */
     public ChatMessage getLatestMessage(Long chatRoomId) {
         log.debug("Fetching latest message for chat room: {}", chatRoomId);
-        return chatMessageRepository.findLatestMessageInChatRoom(chatRoomId);
+        return chatMessageRepository.findFirstByChatRoomIdOrderByCreatedAtDesc(chatRoomId)
+                .orElse(null);
     }
 
     /**
