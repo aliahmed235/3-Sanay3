@@ -66,6 +66,11 @@ public class WebSocketJwtChannelInterceptor implements ChannelInterceptor {
     private void authorizeChatRoomAccess(StompHeaderAccessor accessor) {
         Principal principal = accessor.getUser();
         if (principal == null) {
+            authenticateConnect(accessor);
+            principal = accessor.getUser();
+        }
+
+        if (principal == null) {
             throw new AccessDeniedException("WebSocket user is not authenticated");
         }
 
@@ -74,7 +79,7 @@ public class WebSocketJwtChannelInterceptor implements ChannelInterceptor {
             return;
         }
 
-        Long userId = Long.parseLong(principal.getName());
+        Long userId = parseUserId(principal);
         boolean isParticipant = chatRoomRepository.countRoomMembership(roomId, userId) > 0;
         if (!isParticipant) {
             throw new AccessDeniedException("User is not part of this chat room");
@@ -128,6 +133,14 @@ public class WebSocketJwtChannelInterceptor implements ChannelInterceptor {
             return Long.parseLong(firstSegment);
         } catch (NumberFormatException ex) {
             throw new AccessDeniedException("Invalid chat room destination");
+        }
+    }
+
+    private Long parseUserId(Principal principal) {
+        try {
+            return Long.parseLong(principal.getName());
+        } catch (NumberFormatException ex) {
+            throw new AccessDeniedException("Invalid WebSocket user");
         }
     }
 }
