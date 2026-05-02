@@ -18,12 +18,12 @@ spring:
     locations: classpath:db/migration
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: false
         jdbc:
           batch_size: 5
@@ -33,6 +33,14 @@ spring:
   devtools:
     restart:
       enabled: false
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 12MB
+
+cloudinary:
+  url: ${CLOUDINARY_URL:}
 
 jwt:
   secret: ${JWT_SECRET:}
