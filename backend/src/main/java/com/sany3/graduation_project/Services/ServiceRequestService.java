@@ -111,7 +111,7 @@ public class ServiceRequestService {
         Double radiusKm = Constants.SEARCH.DEFAULT_SEARCH_RADIUS_KM;
 
         return serviceRequestRepository.findOpenRequestsByServiceTypeNearby(
-                serviceType.toString(),
+                serviceType,
                 latitude,
                 longitude,
                 radiusKm
