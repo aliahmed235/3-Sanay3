@@ -8,7 +8,7 @@ import lombok.Getter;
  */
 @Getter
 public enum ServiceType {
-    GAS("Gas Services"),
+    CARPENTER("Carpenter Services"),
     WATER("Water Services"),
     ELECTRICITY("Electricity Services");
 
