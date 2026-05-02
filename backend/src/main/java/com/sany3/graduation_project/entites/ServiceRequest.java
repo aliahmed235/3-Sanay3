@@ -48,10 +48,10 @@ public class ServiceRequest {
     private User customer;
 
     /**
-     * Service Type: GAS, WATER, ELECTRICITY
+     * Service Type: CARPENTER, WATER, ELECTRICITY
      * Used to filter which providers see this request
      *
-     * Example: GAS → Only GAS providers see this request
+     * Example: CARPENTER -> Only CARPENTER providers see this request
      */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
