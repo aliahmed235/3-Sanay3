@@ -158,7 +158,7 @@ public class Constants {
      * Service Types
      */
     public static final class SERVICE_TYPE {
-        public static final String GAS = "GAS";
+        public static final String CARPENTER = "CARPENTER";
         public static final String WATER = "WATER";
         public static final String ELECTRICITY = "ELECTRICITY";
     }
