@@ -1,6 +1,7 @@
 package com.sany3.graduation_project.Repositories;
 
 import com.sany3.graduation_project.entites.ChatRoom;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,31 +12,40 @@ import java.util.Optional;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
+    @Override
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
+    Optional<ChatRoom> findById(Long id);
+
     /**
      * Find chat room for a specific request
      * Since 1 request = 1 chat room
      */
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     Optional<ChatRoom> findByRequestId(Long requestId);
 
     /**
      * Get all chat rooms for a user (either as customer or provider)
      */
     @Query("SELECT cr FROM ChatRoom cr WHERE cr.customer.id = :userId OR cr.provider.id = :userId ORDER BY cr.createdAt DESC")
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     List<ChatRoom> findUserChatRooms(@Param("userId") Long userId);
 
     /**
      * Get all chat rooms for a user as customer
      */
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     List<ChatRoom> findByCustomerId(Long customerId);
 
     /**
      * Get all chat rooms for a user as provider
      */
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     List<ChatRoom> findByProviderId(Long providerId);
 
     /**
      * Find chat between specific customer and provider for a request
      */
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     Optional<ChatRoom> findByCustomerIdAndProviderIdAndRequestId(
             Long customerId, Long providerId, Long requestId);
 
