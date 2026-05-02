@@ -65,14 +65,12 @@ public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long
     /**
      * Get highest priced offer for a request
      */
-    @Query("SELECT so FROM ServiceOffer so WHERE so.request.id = :requestId ORDER BY so.offeredPrice DESC LIMIT 1")
-    Optional<ServiceOffer> findHighestPricedOffer(@Param("requestId") Long requestId);
+    Optional<ServiceOffer> findFirstByRequestIdOrderByOfferedPriceDesc(Long requestId);
 
     /**
      * Get lowest priced offer for a request
      */
-    @Query("SELECT so FROM ServiceOffer so WHERE so.request.id = :requestId ORDER BY so.offeredPrice ASC LIMIT 1")
-    Optional<ServiceOffer> findLowestPricedOffer(@Param("requestId") Long requestId);
+    Optional<ServiceOffer> findFirstByRequestIdOrderByOfferedPriceAsc(Long requestId);
 
     /**
      * Get average offer price for a request
