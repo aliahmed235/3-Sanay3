@@ -59,10 +59,12 @@ public class ChatRoomController {
      */
     @GetMapping("/request/{requestId}")
     public ResponseEntity<ApiResponse<ChatRoomResponse>> getChatRoomByRequest(
-            @PathVariable Long requestId) {
+            @PathVariable Long requestId,
+            Authentication authentication) {
         log.info("Fetching chat room for request: {}", requestId);
 
         var chatRoom = chatService.getChatRoomByRequest(requestId);
+        chatService.validateUserAccess(chatRoom.getId(), (Long) authentication.getPrincipal());
         var response = chatRoomMapper.toChatRoomResponse(chatRoom);
 
         return ResponseEntity.ok(ApiResponse.success(response, "Chat room retrieved successfully"));
@@ -74,9 +76,11 @@ public class ChatRoomController {
      */
     @GetMapping("/{chatRoomId}")
     public ResponseEntity<ApiResponse<ChatRoomResponse>> getChatRoom(
-            @PathVariable Long chatRoomId) {
+            @PathVariable Long chatRoomId,
+            Authentication authentication) {
         log.info("Fetching chat room: {}", chatRoomId);
 
+        chatService.validateUserAccess(chatRoomId, (Long) authentication.getPrincipal());
         var chatRoom = chatService.getChatRoomById(chatRoomId);
         var response = chatRoomMapper.toChatRoomResponse(chatRoom);
 
@@ -98,6 +102,7 @@ public class ChatRoomController {
         log.info("Fetching messages for chat room: {}", chatRoomId);
 
         Long userId = (Long) authentication.getPrincipal();
+        chatService.validateUserAccess(chatRoomId, userId);
         Pageable pageable = PageRequest.of(page, size);
         var messages = chatService.getChatMessages(chatRoomId, pageable);
         var response = messages.map(msg -> chatMessageMapper.toChatMessageDto(msg));
@@ -191,6 +196,7 @@ public class ChatRoomController {
         log.info("Deleting message: {}", messageId);
 
         Long userId = (Long) authentication.getPrincipal();
+        chatService.validateUserAccess(chatRoomId, userId);
         chatService.deleteMessage(messageId, userId);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Message deleted successfully"));
@@ -202,9 +208,11 @@ public class ChatRoomController {
      */
     @GetMapping("/{chatRoomId}/latest-message")
     public ResponseEntity<ApiResponse<ChatMessageDto>> getLatestMessage(
-            @PathVariable Long chatRoomId) {
+            @PathVariable Long chatRoomId,
+            Authentication authentication) {
         log.info("Fetching latest message for chat room: {}", chatRoomId);
 
+        chatService.validateUserAccess(chatRoomId, (Long) authentication.getPrincipal());
         var message = chatService.getLatestMessage(chatRoomId);
         if (message == null) {
             return ResponseEntity.ok(ApiResponse.success(null, "No messages in this chat"));
@@ -220,9 +228,11 @@ public class ChatRoomController {
      */
     @GetMapping("/{chatRoomId}/message-count")
     public ResponseEntity<ApiResponse<Long>> getMessageCount(
-            @PathVariable Long chatRoomId) {
+            @PathVariable Long chatRoomId,
+            Authentication authentication) {
         log.info("Fetching message count for chat room: {}", chatRoomId);
 
+        chatService.validateUserAccess(chatRoomId, (Long) authentication.getPrincipal());
         Long count = chatService.getMessageCount(chatRoomId);
         return ResponseEntity.ok(ApiResponse.success(count, "Message count retrieved successfully"));
     }
