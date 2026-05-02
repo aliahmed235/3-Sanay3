@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import com.sany3.graduation_project.exception.InvalidCredentialsException;
 import com.sany3.graduation_project.exception.UserAlreadyExistsException;
 
@@ -27,9 +28,11 @@ public class AuthServiceImpl implements AuthService {
     private final UserRoleRepository userRoleRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final ServiceProviderProfileRepository providerProfileRepository;
+    private final ProviderDocumentRepository providerDocumentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;  // ← Use interface type
     private final UserMapper userMapper;
+    private final CloudinaryStorageService cloudinaryStorageService;
 
     @Override
     public LoginResponse registerCustomer(RegisterRequest request) {
@@ -42,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
                 request.getEmail(),
                 request.getPhone(),
                 request.getPassword(),
-                null, null, null
+                null, null, null, null
         );
 
         assignRoleToUser(user, RoleType.USER);
@@ -53,10 +56,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse registerServiceProvider(RegisterProviderRequest request) {
+        return registerServiceProvider(request, null, null);
+    }
+
+    @Override
+    public LoginResponse registerServiceProvider(
+            RegisterProviderRequest request,
+            MultipartFile profilePicture,
+            MultipartFile criminalHistory) {
         log.info("Registering service provider: {}", request.getEmail());
 
         validateUserDoesNotExist(request.getEmail(), request.getPhone());
-        validateProviderData(request);
+        validateProviderData(request, profilePicture, criminalHistory);
+
+        String profileImageUrl = resolveProfileImageUrl(request, profilePicture);
+        String criminalHistoryUrl = resolveCriminalHistoryUrl(request, criminalHistory);
 
         User user = createAndSaveUser(
                 request.getName(),
@@ -65,11 +79,13 @@ public class AuthServiceImpl implements AuthService {
                 request.getPassword(),
                 request.getAddress(),
                 request.getLatitude(),
-                request.getLongitude()
+                request.getLongitude(),
+                profileImageUrl
         );
 
         assignRoleToUser(user, RoleType.SERVICE_PROVIDER);
-        createServiceProviderProfile(user, request);
+        ServiceProviderProfile profile = createServiceProviderProfile(user, request);
+        createCriminalHistoryDocument(profile, criminalHistoryUrl, criminalHistory);
 
         return generateLoginResponse(user);
     }
@@ -139,18 +155,25 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private void validateProviderData(RegisterProviderRequest request) {
+    private void validateProviderData(
+            RegisterProviderRequest request,
+            MultipartFile profilePicture,
+            MultipartFile criminalHistory) {
         if (request.getHourlyRate().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Hourly rate must be greater than 0");
         }
         if (request.getBio() == null || request.getBio().trim().isEmpty()) {
             throw new IllegalArgumentException("Bio is required");
         }
+        if (providerProfileRepository.existsByNationalId(request.getNationalId())) {
+            throw new UserAlreadyExistsException("National ID already registered");
+        }
     }
 
     private User createAndSaveUser(String name, String email, String phone, String password,
                                    String address, java.math.BigDecimal latitude,
-                                   java.math.BigDecimal longitude) {
+                                   java.math.BigDecimal longitude,
+                                   String profileImageUrl) {
         User user = new User();
         user.setName(name);
         user.setEmail(email);
@@ -159,6 +182,7 @@ public class AuthServiceImpl implements AuthService {
         user.setAddress(address);
         user.setLatitude(latitude);
         user.setLongitude(longitude);
+        user.setProfileImage(profileImageUrl);
         user.setIsActive(true);
 
         user = userRepository.save(user);
@@ -185,20 +209,60 @@ public class AuthServiceImpl implements AuthService {
         log.debug("Customer profile created for user: {}", user.getId());
     }
 
-    private void createServiceProviderProfile(User user, RegisterProviderRequest request) {
+    private ServiceProviderProfile createServiceProviderProfile(User user, RegisterProviderRequest request) {
         ServiceProviderProfile profile = new ServiceProviderProfile();
         profile.setUser(user);
         profile.setServiceType(request.getServiceType());
+        profile.setNationalId(request.getNationalId());
         profile.setHourlyRate(request.getHourlyRate());
         profile.setBio(request.getBio());
         profile.setAddress(request.getAddress());
         profile.setLatitude(request.getLatitude());
         profile.setLongitude(request.getLongitude());
+        profile.setHasCriminalRecord(Boolean.TRUE.equals(request.getHasCriminalRecord()));
         profile.setIsVerified(false);
         profile.setVerificationStatus(VerificationStatus.PENDING);
 
-        providerProfileRepository.save(profile);
+        profile = providerProfileRepository.save(profile);
         log.debug("Service provider profile created (PENDING) for user: {}", user.getId());
+        return profile;
+    }
+
+    private void createCriminalHistoryDocument(
+            ServiceProviderProfile profile,
+            String documentUrl,
+            MultipartFile criminalHistory) {
+        if (isBlank(documentUrl)) {
+            return;
+        }
+
+        ProviderDocument document = new ProviderDocument();
+        document.setServiceProviderProfile(profile);
+        document.setDocumentType(DocumentType.CRIMINAL_HISTORY);
+        document.setDocumentName(criminalHistory != null && criminalHistory.getOriginalFilename() != null
+                ? criminalHistory.getOriginalFilename()
+                : "Criminal history document");
+        document.setDocumentUrl(documentUrl);
+        document.setIsVerified(false);
+        providerDocumentRepository.save(document);
+    }
+
+    private String resolveProfileImageUrl(RegisterProviderRequest request, MultipartFile profilePicture) {
+        if (profilePicture != null) {
+            return cloudinaryStorageService.upload(profilePicture, "sanay3/profile-pictures");
+        }
+        return isBlank(request.getProfileImageUrl()) ? null : request.getProfileImageUrl().trim();
+    }
+
+    private String resolveCriminalHistoryUrl(RegisterProviderRequest request, MultipartFile criminalHistory) {
+        if (criminalHistory != null) {
+            return cloudinaryStorageService.upload(criminalHistory, "sanay3/criminal-history");
+        }
+        return isBlank(request.getCriminalHistoryDocumentUrl()) ? null : request.getCriminalHistoryDocumentUrl().trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private LoginResponse generateLoginResponse(User user) {
