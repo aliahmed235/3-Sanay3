@@ -33,7 +33,10 @@ public class ServiceProviderProfile {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private ServiceType serviceType; // GAS, WATER, ELECTRICITY
+    private ServiceType serviceType; // CARPENTER, WATER, ELECTRICITY
+
+    @Column(name = "national_id", length = 20, unique = true)
+    private String nationalId;
 
     @Column(precision = 8, scale = 2)
     private BigDecimal hourlyRate;
@@ -67,6 +70,9 @@ public class ServiceProviderProfile {
 
     @Column(columnDefinition = "TEXT")
     private String rejectionReason;
+
+    @Column(name = "has_criminal_record", nullable = false)
+    private Boolean hasCriminalRecord = false;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
