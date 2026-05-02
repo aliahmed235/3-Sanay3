@@ -59,7 +59,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
      * Calculation: distance in km = SQRT(lat_diff^2 + lon_diff^2) * 111
      */
 
-    @Query(value = "SELECT sr.* FROM service_request sr WHERE " +
+    @Query(value = "SELECT sr.* FROM service_requests sr WHERE " +
             "SQRT(POW(sr.latitude - :latitude, 2) + POW(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
             "AND sr.status = 'OPEN'", nativeQuery = true)
     List<ServiceRequest> findRequestsNearby(
@@ -71,7 +71,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
      * Find open requests by service type and nearby location
      * For provider map view (filtered by service type + distance)
      */
-    @Query(value = "SELECT sr FROM service_requests sr " +
+    @Query(value = "SELECT sr.* FROM service_requests sr " +
             "WHERE sr.service_type = :serviceType " +
             "AND sr.status = 'OPEN' " +
             "AND SQRT(POW(sr.latitude - :latitude, 2) + POW(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
