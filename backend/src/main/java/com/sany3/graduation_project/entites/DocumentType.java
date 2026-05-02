@@ -2,6 +2,7 @@ package com.sany3.graduation_project.entites;
 
 public enum DocumentType {
     ID("National ID or Emirates ID"),
+    CRIMINAL_HISTORY("Criminal history or police record"),
     LICENSE("Professional License"),
     CERTIFICATE("Professional Certificate"),
     INSURANCE("Insurance Document"),
