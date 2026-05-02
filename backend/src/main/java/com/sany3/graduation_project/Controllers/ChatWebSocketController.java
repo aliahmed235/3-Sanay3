@@ -55,14 +55,20 @@ public class ChatWebSocketController {
             @DestinationVariable Long roomId,
             @Payload ChatMessageRequest request,
             Principal principal) {
-        log.info("Received message in room: {} from user: {}", roomId, principal.getName());
+        String userName = authenticatedUserName(principal);
+        if (userName == null) {
+            log.warn("Rejected unauthenticated WebSocket message for room {}", roomId);
+            return;
+        }
+
+        log.info("Received message in room: {} from user: {}", roomId, userName);
 
         try {
-            Long senderId = Long.parseLong(principal.getName());
+            Long senderId = Long.parseLong(userName);
 
             // Validate chat room ID matches
             if (!request.getChatRoomId().equals(roomId)) {
-                sendErrorToUser(principal.getName(), "Chat room ID mismatch");
+                sendErrorToUser(userName, "Chat room ID mismatch");
                 return;
             }
 
@@ -70,7 +76,7 @@ public class ChatWebSocketController {
             ChatMessage savedMessage = processMessageByType(request, senderId);
 
             if (savedMessage == null) {
-                sendErrorToUser(principal.getName(), "Failed to save message");
+                sendErrorToUser(userName, "Failed to save message");
                 return;
             }
 
@@ -87,7 +93,7 @@ public class ChatWebSocketController {
 
         } catch (Exception e) {
             log.error("Error sending message: ", e);
-            sendErrorToUser(principal.getName(), "Error sending message: " + e.getMessage());
+            sendErrorToUser(userName, "Error sending message: " + e.getMessage());
         }
     }
 
@@ -135,10 +141,15 @@ public class ChatWebSocketController {
     public void typingIndicator(
             @DestinationVariable Long roomId,
             Principal principal) {
-        log.debug("User {} is typing in room {}", principal.getName(), roomId);
+        String userName = authenticatedUserName(principal);
+        if (userName == null) {
+            return;
+        }
+
+        log.debug("User {} is typing in room {}", userName, roomId);
 
         try {
-            Long userId = Long.parseLong(principal.getName());
+            Long userId = Long.parseLong(userName);
 
             TypingEvent typingEvent = TypingEvent.builder()
                     .userId(userId)
@@ -163,10 +174,15 @@ public class ChatWebSocketController {
     public void stopTyping(
             @DestinationVariable Long roomId,
             Principal principal) {
-        log.debug("User {} stopped typing in room {}", principal.getName(), roomId);
+        String userName = authenticatedUserName(principal);
+        if (userName == null) {
+            return;
+        }
+
+        log.debug("User {} stopped typing in room {}", userName, roomId);
 
         try {
-            Long userId = Long.parseLong(principal.getName());
+            Long userId = Long.parseLong(userName);
 
             TypingEvent typingEvent = TypingEvent.builder()
                     .userId(userId)
@@ -190,10 +206,15 @@ public class ChatWebSocketController {
     public void userOnline(
             @DestinationVariable Long roomId,
             Principal principal) {
-        log.debug("User {} came online in room {}", principal.getName(), roomId);
+        String userName = authenticatedUserName(principal);
+        if (userName == null) {
+            return;
+        }
+
+        log.debug("User {} came online in room {}", userName, roomId);
 
         try {
-            Long userId = Long.parseLong(principal.getName());
+            Long userId = Long.parseLong(userName);
 
             OnlineEvent onlineEvent = OnlineEvent.builder()
                     .userId(userId)
@@ -217,10 +238,15 @@ public class ChatWebSocketController {
     public void userOffline(
             @DestinationVariable Long roomId,
             Principal principal) {
-        log.debug("User {} went offline in room {}", principal.getName(), roomId);
+        String userName = authenticatedUserName(principal);
+        if (userName == null) {
+            return;
+        }
+
+        log.debug("User {} went offline in room {}", userName, roomId);
 
         try {
-            Long userId = Long.parseLong(principal.getName());
+            Long userId = Long.parseLong(userName);
 
             OnlineEvent onlineEvent = OnlineEvent.builder()
                     .userId(userId)
@@ -248,6 +274,10 @@ public class ChatWebSocketController {
                         .timestamp(LocalDateTime.now())
                         .build()
         );
+    }
+
+    private String authenticatedUserName(Principal principal) {
+        return principal == null ? null : principal.getName();
     }
 
     /**
