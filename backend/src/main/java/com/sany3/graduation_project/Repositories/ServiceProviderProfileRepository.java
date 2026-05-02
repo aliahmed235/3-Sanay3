@@ -24,6 +24,8 @@ public interface ServiceProviderProfileRepository extends JpaRepository<ServiceP
      */
     Optional<ServiceProviderProfile> findByUserId(Long userId);
 
+    Boolean existsByNationalId(String nationalId);
+
     /**
      * Find all providers by service type
      * @param serviceType Type of service
