@@ -284,7 +284,7 @@ public class ServiceOfferService {
      */
     public ServiceOffer getLowestOffer(Long requestId) {
         log.debug("Fetching lowest priced offer for request: {}", requestId);
-        return serviceOfferRepository.findLowestPricedOffer(requestId).orElse(null);
+        return serviceOfferRepository.findFirstByRequestIdOrderByOfferedPriceAsc(requestId).orElse(null);
     }
 
     /**
@@ -295,6 +295,6 @@ public class ServiceOfferService {
      */
     public ServiceOffer getHighestOffer(Long requestId) {
         log.debug("Fetching highest priced offer for request: {}", requestId);
-        return serviceOfferRepository.findHighestPricedOffer(requestId).orElse(null);
+        return serviceOfferRepository.findFirstByRequestIdOrderByOfferedPriceDesc(requestId).orElse(null);
     }
 }
