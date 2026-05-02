@@ -15,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * WebSocket Chat Controller
@@ -66,9 +67,9 @@ public class ChatWebSocketController {
         try {
             Long senderId = Long.parseLong(userName);
 
-            // Validate chat room ID matches
-            if (!request.getChatRoomId().equals(roomId)) {
-                sendErrorToUser(userName, "Chat room ID mismatch");
+            String validationError = validateMessageRequest(roomId, request);
+            if (validationError != null) {
+                sendErrorToUser(userName, validationError);
                 return;
             }
 
@@ -128,6 +129,32 @@ public class ChatWebSocketController {
                 log.warn("Unknown message type: {}", request.getMessageType());
                 return null;
         }
+    }
+
+    private String validateMessageRequest(Long roomId, ChatMessageRequest request) {
+        if (request == null) {
+            return "Message payload is required";
+        }
+
+        if (!Objects.equals(request.getChatRoomId(), roomId)) {
+            return "Chat room ID mismatch";
+        }
+
+        if (request.getMessageType() == null) {
+            return "Message type is required";
+        }
+
+        if ((request.getMessageType() == ChatMessageType.TEXT || request.getMessageType() == ChatMessageType.PHOTO)
+                && (request.getMessage() == null || request.getMessage().isBlank())) {
+            return "Message content is required";
+        }
+
+        if (request.getMessageType() == ChatMessageType.LOCATION
+                && (request.getLatitude() == null || request.getLongitude() == null)) {
+            return "Latitude and longitude are required";
+        }
+
+        return null;
     }
 
     /**
