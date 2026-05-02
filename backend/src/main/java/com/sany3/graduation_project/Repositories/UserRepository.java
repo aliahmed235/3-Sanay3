@@ -42,14 +42,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Find all providers (users with PROVIDER role)
      * Joins with user_roles table
      */
-    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'PROVIDER'")
+    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'SERVICE_PROVIDER'")
     List<User> findAllProviders();
 
     /**
      * Find all customers (users with CUSTOMER role)
      * Joins with user_roles table
      */
-    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'CUSTOMER'")
+    @Query("SELECT u FROM User u JOIN UserRole ur ON u.id = ur.user.id WHERE ur.role.name = 'USER'")
     List<User> findAllCustomers();
 
     /**
@@ -60,8 +60,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * Get top rated providers
      */
-    @Query("SELECT u FROM User u WHERE u.id IN " +
-            "(SELECT r.provider.id FROM Rating r WHERE r.provider.id IS NOT NULL " +
-            "GROUP BY r.provider.id ORDER BY AVG(r.finalRating) DESC LIMIT :limit)")
+    @Query(value = "SELECT u.* FROM users u " +
+            "JOIN ratings r ON r.provider_id = u.id " +
+            "GROUP BY u.id " +
+            "ORDER BY AVG(r.final_rating) DESC " +
+            "LIMIT :limit",
+            nativeQuery = true)
     List<User> findTopRatedProviders(@Param("limit") int limit);
 }
