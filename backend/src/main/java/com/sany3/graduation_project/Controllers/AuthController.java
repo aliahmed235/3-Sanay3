@@ -11,9 +11,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/auth")
@@ -31,11 +33,21 @@ public class AuthController {
                 .body(authService.registerCustomer(request));
     }
 
-    @PostMapping("/register/provider")
+    @PostMapping(value = "/register/provider", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> registerServiceProvider(@Valid @RequestBody RegisterProviderRequest request) {
         log.info("Service provider registration request: {}", request.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(authService.registerServiceProvider(request));
+    }
+
+    @PostMapping(value = "/register/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> registerServiceProviderWithFiles(
+            @Valid @ModelAttribute RegisterProviderRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "criminalHistory", required = false) MultipartFile criminalHistory) {
+        log.info("Service provider multipart registration request: {}", request.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(authService.registerServiceProvider(request, profilePicture, criminalHistory));
     }
 
     @PostMapping("/login")
