@@ -21,7 +21,7 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.secret:mySecretKeyForSanay3ApplicationThatIsLongEnoughForHS256}")
     private String jwtSecret;
 
-    @Value("${jwt.access-token-expiry:900000}")
+    @Value("${jwt.access-token-expiry:604800000}")
     private long accessTokenExpiry;
 
     @Value("${jwt.refresh-token-expiry:604800000}")

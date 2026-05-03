@@ -10,12 +10,12 @@ public class Constants {
      * JWT Token Configuration
      */
     public static final class JWT {
-        public static final long ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000;      // 15 minutes in milliseconds
+        public static final long ACCESS_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000;      // 15 minutes in milliseconds
         public static final long REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000;  // 7 days in milliseconds
         public static final String TOKEN_TYPE = "Bearer";
         public static final String AUTHORIZATION_HEADER = "Authorization";
     }
-
+        //15 * 60 * 1000
     /**
      * Validation Patterns and Constraints
      */
