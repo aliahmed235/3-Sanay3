@@ -5,7 +5,6 @@ import com.sany3.graduation_project.dto.request.CreateServiceOfferRequest;
 import com.sany3.graduation_project.dto.response.ApiResponse;
 import com.sany3.graduation_project.dto.response.ServiceOfferResponse;
 import com.sany3.graduation_project.mapper.ServiceOfferMapper;
-import com.sany3.graduation_project.entites.OfferStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +44,8 @@ public class ServiceOfferController {
     }
 
     /**
-     * Get all offers for a request
-     * GET /api/offers/request/{requestId}
+     * Get all offers for a request (MUST BE BEFORE /{offerId})
+     * GET /api/offers/request/{requestId}?page=0&size=10
      */
     @GetMapping("/request/{requestId}")
     public ResponseEntity<ApiResponse<Page<ServiceOfferResponse>>> getOffersForRequest(
@@ -62,8 +61,8 @@ public class ServiceOfferController {
     }
 
     /**
-     * Get my offers (provider dashboard)
-     * GET /api/offers/my-offers
+     * Get provider's own offers (MUST BE BEFORE /{offerId})
+     * GET /api/offers/my-offers?page=0&size=10
      */
     @GetMapping("/my-offers")
     public ResponseEntity<ApiResponse<Page<ServiceOfferResponse>>> getMyOffers(
@@ -80,7 +79,7 @@ public class ServiceOfferController {
     }
 
     /**
-     * Get single offer
+     * Get single offer by ID (MUST BE LAST - catches all remaining paths)
      * GET /api/offers/{offerId}
      */
     @GetMapping("/{offerId}")
@@ -94,7 +93,7 @@ public class ServiceOfferController {
     }
 
     /**
-     * Update offer
+     * Update offer (provider can update their pending offer)
      * PUT /api/offers/{offerId}
      */
     @PutMapping("/{offerId}")
@@ -111,7 +110,7 @@ public class ServiceOfferController {
     }
 
     /**
-     * Withdraw offer
+     * Withdraw offer (provider withdraws their offer)
      * DELETE /api/offers/{offerId}
      */
     @DeleteMapping("/{offerId}")
@@ -122,6 +121,6 @@ public class ServiceOfferController {
         Long providerId = (Long) authentication.getPrincipal();
         serviceOfferService.withdrawOffer(offerId, providerId);
 
-        return ResponseEntity.ok(ApiResponse.success(null, "Offer withdrawn"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Offer withdrawn successfully"));
     }
 }
