@@ -11,6 +11,7 @@ import com.sany3.graduation_project.entites.User;
 import com.sany3.graduation_project.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -85,6 +86,28 @@ public class ServiceOfferService {
      */
     public Page<ServiceOffer> getRequestOffers(Long requestId, Pageable pageable) {
         log.debug("Fetching offers for request: {}", requestId);
+        return serviceOfferRepository.findByRequestIdOrderByCreatedAtDesc(requestId, pageable);
+    }
+
+    /**
+     * Get offers for a request owned by the customer
+     * Prevents users from viewing offers on requests they do not own
+     *
+     * @param requestId Request ID
+     * @param customerId Customer ID from auth token
+     * @param pageable Pagination
+     * @return Page of offers for that request
+     */
+    public Page<ServiceOffer> getRequestOffersForCustomer(Long requestId, Long customerId, Pageable pageable) {
+        log.debug("Fetching offers for request {} as customer {}", requestId, customerId);
+
+        ServiceRequest serviceRequest = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
+
+        if (!serviceRequest.getCustomer().getId().equals(customerId)) {
+            throw new AccessDeniedException("You can only view offers for your own request");
+        }
+
         return serviceOfferRepository.findByRequestIdOrderByCreatedAtDesc(requestId, pageable);
     }
 

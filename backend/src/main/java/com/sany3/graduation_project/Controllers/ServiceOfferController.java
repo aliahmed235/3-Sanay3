@@ -50,11 +50,13 @@ public class ServiceOfferController {
     @GetMapping("/request/{requestId}")
     public ResponseEntity<ApiResponse<Page<ServiceOfferResponse>>> getOffersForRequest(
             @PathVariable Long requestId,
+            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
+        Long customerId = (Long) authentication.getPrincipal();
         Pageable pageable = PageRequest.of(page, size);
-        var offers = serviceOfferService.getRequestOffers(requestId, pageable);
+        var offers = serviceOfferService.getRequestOffersForCustomer(requestId, customerId, pageable);
         var response = offers.map(serviceOfferMapper::toServiceOfferResponse);
 
         return ResponseEntity.ok(ApiResponse.success(response, "Offers retrieved"));

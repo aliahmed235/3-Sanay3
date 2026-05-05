@@ -2,6 +2,7 @@ package com.sany3.graduation_project.Repositories;
 
 import com.sany3.graduation_project.entites.OfferStatus;
 import com.sany3.graduation_project.entites.ServiceOffer;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,10 @@ import java.util.Optional;
 @Repository
 public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long> {
 
+    @Override
+    @EntityGraph(attributePaths = {"request", "provider"})
+    Optional<ServiceOffer> findById(Long id);
+
     /**
      * Get all offers for a specific request
      */
@@ -22,11 +27,13 @@ public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long
     /**
      * Get all offers from a provider (sorted by newest)
      */
+    @EntityGraph(attributePaths = {"request", "provider"})
     Page<ServiceOffer> findByProviderId(Long providerId, Pageable pageable);
 
     /**
      * Get all offers for a request paginated and sorted by newest first
      */
+    @EntityGraph(attributePaths = {"request", "provider"})
     Page<ServiceOffer> findByRequestIdOrderByCreatedAtDesc(Long requestId, Pageable pageable);
 
     /**
