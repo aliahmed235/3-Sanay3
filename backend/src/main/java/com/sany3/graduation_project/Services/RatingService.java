@@ -53,7 +53,6 @@ public class RatingService {
                 .provider(provider)
                 .ratingValue(request.getRatingValue())
                 .review(request.getReview())
-                // ✅ CHANGED FROM Boolean TO Double (0.0 or penalty amount)
                 .cancellationPenalty(0.0)
                 .lateArrivalPenalty(request.getLateArrivalPenalty() != null ? request.getLateArrivalPenalty() : 0.0)
                 .minutesLate(request.getMinutesLate())
@@ -79,8 +78,25 @@ public class RatingService {
      * Get all ratings for a provider
      */
     public Page<Rating> getProviderRatings(Long providerId, Pageable pageable) {
-        log.debug("Fetching ratings for provider: {}", providerId);
-        return ratingRepository.findByProviderId(providerId, pageable);
+        log.info("Fetching ratings for provider: {} with pagination: page={}, size={}",
+                providerId , pageable.getPageNumber(), pageable.getPageSize());
+        if (!userRepository.existsById(providerId)) {
+            log.warn("Provider not found with ID: {}", providerId);
+            throw new ResourceNotFoundException("Provider not found");
+        }
+
+        if (pageable.getPageSize() < 0) {
+            throw new IllegalStateException("Page size must be >=0");
+        }
+        if (pageable.getPageSize() < 1 || pageable.getPageSize() > 100) {
+            throw new IllegalArgumentException("Page size must be between 1 and 100");
+        }
+        Page<Rating> ratings = ratingRepository.findByProviderId(providerId, pageable);
+
+        log.debug("Found {} ratings for provider: {} (Total: {}, Pages: {})",
+                ratings.getContent().size(), providerId, ratings.getTotalElements(), ratings.getTotalPages());
+
+        return ratings;
     }
 
     /**
