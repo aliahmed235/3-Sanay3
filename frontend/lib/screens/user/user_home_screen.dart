@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:talat_sanaye3/models/customer_models.dart';
 import 'package:talat_sanaye3/providers/auth_session_provider.dart';
 import 'package:talat_sanaye3/providers/location_provider.dart';
 import 'package:talat_sanaye3/screens/user/account_screen.dart';
@@ -141,13 +142,7 @@ class _HomeBody extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: IconButton(
-                onPressed: () => _showOfferNotifications(context),
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: Colors.black87,
-                ),
-              ),
+              child: const _NotificationBell(),
             ),
           ),
         ],
@@ -329,92 +324,155 @@ class _HomeBody extends StatelessWidget {
   }
 }
 
-Future<void> _showOfferNotifications(BuildContext context) async {
-  final token = context.read<AuthSessionProvider>().accessToken ?? '';
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-    ),
-    builder: (context) {
-      return FutureBuilder(
-        future: ServiceRequestApi().getMyRequests(token: token),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 220,
-              child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFFFB703)),
-              ),
-            );
-          }
-          final requests = (snapshot.data ?? [])
-              .where((request) => request.offerCount > 0)
-              .toList();
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Notifications',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF121A34),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (requests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
-                      child: Center(
-                        child: Text(
-                          'No new offers yet',
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                      ),
-                    )
-                  else
-                    ...requests.map(
-                      (request) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const CircleAvatar(
-                          backgroundColor: Color(0xFFFFF4D0),
-                          child: Icon(
-                            Icons.local_offer_outlined,
-                            color: Color(0xFFFFB703),
-                          ),
-                        ),
-                        title: Text(
-                          '${request.offerCount} offer(s) for ${request.title}',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        subtitle: Text('#REQ${request.id}'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  OffersScreen(requestId: request.id),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
+// ─── Notification Bell ────────────────────────────────────────────────────────
+
+class _NotificationBell extends StatefulWidget {
+  const _NotificationBell();
+
+  @override
+  State<_NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<_NotificationBell> {
+  int _offerCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCount();
+  }
+
+  Future<void> _fetchCount() async {
+    try {
+      final token = context.read<AuthSessionProvider>().accessToken ?? '';
+      final requests = await ServiceRequestApi().getMyRequests(token: token);
+      final count = requests.where((r) => r.offerCount > 0).length;
+      if (mounted) setState(() => _offerCount = count);
+    } catch (_) {}
+  }
+
+  Future<void> _openNotifications() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) => const _NotificationModal(),
+    );
+    _fetchCount();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: _openNotifications,
+      icon: Badge(
+        isLabelVisible: _offerCount > 0,
+        label: Text('$_offerCount'),
+        child: const Icon(Icons.notifications_none, color: Colors.black87),
+      ),
+    );
+  }
+}
+
+// ─── Notification Modal ───────────────────────────────────────────────────────
+
+class _NotificationModal extends StatefulWidget {
+  const _NotificationModal();
+
+  @override
+  State<_NotificationModal> createState() => _NotificationModalState();
+}
+
+class _NotificationModalState extends State<_NotificationModal> {
+  late Future<List<CustomerRequestModel>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    final token = context.read<AuthSessionProvider>().accessToken ?? '';
+    _future = ServiceRequestApi().getMyRequests(token: token);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<CustomerRequestModel>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 220,
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFFFFB703)),
             ),
           );
-        },
-      );
-    },
-  );
+        }
+        final requests = (snapshot.data ?? [])
+            .where((request) => request.offerCount > 0)
+            .toList();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Notifications',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF121A34),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (requests.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        'No new offers yet',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    ),
+                  )
+                else
+                  ...requests.map(
+                    (request) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFFFF4D0),
+                        child: Icon(
+                          Icons.local_offer_outlined,
+                          color: Color(0xFFFFB703),
+                        ),
+                      ),
+                      title: Text(
+                        '${request.offerCount} offer(s) for ${request.title}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text('#REQ${request.id}'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                OffersScreen(requestId: request.id),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 // ─── Category ─────────────────────────────────────────────────────────────────

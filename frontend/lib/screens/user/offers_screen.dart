@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:talat_sanaye3/models/customer_models.dart';
@@ -24,11 +26,24 @@ class OffersScreen extends StatefulWidget {
 class _OffersScreenState extends State<OffersScreen> {
   late Future<List<OfferModel>> _future;
   bool _accepting = false;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _future = _loadOffers();
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) {
+        if (mounted && !_accepting) _refresh();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<List<OfferModel>> _loadOffers() {
