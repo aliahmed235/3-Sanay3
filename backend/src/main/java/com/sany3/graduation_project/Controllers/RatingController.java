@@ -48,21 +48,15 @@ public class RatingController {
      * GET /api/ratings/provider/{providerId}?page=0&size=10
      */
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getProviderRatings(
+    public ResponseEntity<Page<RatingResponse>> getProviderRatings(
             @PathVariable Long providerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        try {
-            var ratings = ratingService.getProviderRatings(providerId, page, size);
-            var responses = ratings.map(ratingMapper::toRatingResponse);
-            return ResponseEntity.ok(ApiResponse.success(responses, "Ratings retrieved"));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("Error fetching ratings"));
-        }
+
+        Page<Rating> ratings = ratingService.getProviderRatings(providerId, page, size);
+        Page<RatingResponse> response = ratings.map(ratingMapper::toRatingResponse);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
