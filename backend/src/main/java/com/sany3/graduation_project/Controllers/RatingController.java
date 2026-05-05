@@ -2,9 +2,11 @@ package com.sany3.graduation_project.Controllers;
 
 import com.sany3.graduation_project.Services.RatingService;
 import com.sany3.graduation_project.dto.request.CreateRatingRequest;
+import com.sany3.graduation_project.dto.response.ApiResponse;
 import com.sany3.graduation_project.dto.response.ProviderRatingStats;
 import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.entites.Rating;
+import com.sany3.graduation_project.exception.ResourceNotFoundException;
 import com.sany3.graduation_project.mapper.RatingMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,32 +48,43 @@ public class RatingController {
      * GET /api/ratings/provider/{providerId}?page=0&size=10
      */
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<Page<RatingResponse>> getProviderRatings(
+    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getProviderRatings(
             @PathVariable Long providerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("GET /api/ratings/provider/{} - Fetching ratings", providerId);
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Rating> ratings = ratingService.getProviderRatings(providerId, pageable);
-        Page<RatingResponse> responses = ratings.map(ratingMapper::toRatingResponse);
+        try {
+            log.info("GET /api/ratings/provider/{} - Fetching ratings (page: {}, size: {})",
+                    providerId, page, size);
 
-        return ResponseEntity.ok(responses);
-    }
+            // ✅ Create pageable object
+            Pageable pageable = PageRequest.of(page, size);
 
-    /**
-     * Get rating for a specific request
-     * GET /api/ratings/request/{requestId}
-     */
-    @GetMapping("/request/{requestId}")
-    public ResponseEntity<RatingResponse> getRatingForRequest(
-            @PathVariable Long requestId) {
-        log.info("GET /api/ratings/request/{} - Fetching rating", requestId);
+            // ✅ Call service (all business logic happens here)
+            var ratings = ratingService.getProviderRatings(providerId, pageable);
 
-        Rating rating = ratingService.getRatingForRequest(requestId);
-        RatingResponse response = ratingMapper.toRatingResponse(rating);
+            // ✅ Map to response
+            var responses = ratings.map(ratingMapper::toRatingResponse);
 
-        return ResponseEntity.ok(response);
+            // ✅ Return success
+            return ResponseEntity.ok(
+                    ApiResponse.success(responses, "Ratings retrieved successfully"));
+
+        } catch (ResourceNotFoundException e) {
+            log.error("Provider not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request parameters: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("Unexpected error fetching ratings: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error fetching ratings"));
+        }
     }
 
     /**
