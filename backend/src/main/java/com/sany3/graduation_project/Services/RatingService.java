@@ -79,18 +79,19 @@ public class RatingService {
      */
     public Page<Rating> getProviderRatings(Long providerId, Pageable pageable) {
         log.info("Fetching ratings for provider: {} with pagination: page={}, size={}",
-                providerId , pageable.getPageNumber(), pageable.getPageSize());
+                providerId, pageable.getPageNumber(), pageable.getPageSize());
+
         if (!userRepository.existsById(providerId)) {
-            log.warn("Provider not found with ID: {}", providerId);
+            log.warn("Provider not found: {}", providerId);
             throw new ResourceNotFoundException("Provider not found");
         }
-
-        if (pageable.getPageSize() < 0) {
-            throw new IllegalStateException("Page size must be >=0");
+        if (pageable.getPageNumber() < 0) {
+            throw new IllegalArgumentException("Page number must be >= 0");
         }
         if (pageable.getPageSize() < 1 || pageable.getPageSize() > 100) {
             throw new IllegalArgumentException("Page size must be between 1 and 100");
         }
+
         Page<Rating> ratings = ratingRepository.findByProviderId(providerId, pageable);
 
         log.debug("Found {} ratings for provider: {} (Total: {}, Pages: {})",
