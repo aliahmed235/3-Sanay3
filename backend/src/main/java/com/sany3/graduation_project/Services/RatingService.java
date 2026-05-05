@@ -99,12 +99,15 @@ public class RatingService {
     public Rating getRatingForRequest(Long requestId) {
         log.debug("Fetching rating for request: {}", requestId);
 
+        // ✅ VALIDATION 1: Check request exists
         if (!serviceRequestRepository.existsById(requestId)) {
             throw new ResourceNotFoundException("Request not found");
         }
 
+        // ✅ VALIDATION 2: Fetch with proper error
         return ratingRepository.findByRequestId(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Rating not found for this request"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No rating found for request: " + requestId));
     }
     /**
      * Get average rating for a provider

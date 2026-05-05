@@ -60,12 +60,32 @@ public class RatingController {
     }
 
     @GetMapping("/request/{requestId}")
-    public ResponseEntity<RatingResponse> getRatingForRequest(
+    public ResponseEntity<ApiResponse<RatingResponse>> getRatingForRequest(
             @PathVariable Long requestId) {
-        log.info("GET /api/ratings/request/{} - Fetching rating", requestId);
+        try {
+            log.info("Fetching rating for request: {}", requestId);
 
-        Rating rating = ratingService.getRatingForRequest(requestId);
-        return ResponseEntity.ok(ratingMapper.toRatingResponse(rating));
+            // ✅ VALIDATION: Check request ID is valid
+            if (requestId == null || requestId <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid request ID"));
+            }
+
+            var rating = ratingService.getRatingForRequest(requestId);
+            var response = ratingMapper.toRatingResponse(rating);
+
+            return ResponseEntity.ok(
+                    ApiResponse.success(response, "Rating retrieved"));
+
+        } catch (ResourceNotFoundException e) {
+            log.warn("Rating not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error fetching rating: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
 
     /**
