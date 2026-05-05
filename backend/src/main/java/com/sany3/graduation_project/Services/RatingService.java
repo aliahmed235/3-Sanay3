@@ -9,6 +9,7 @@ import com.sany3.graduation_project.util.RatingCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,29 +78,22 @@ public class RatingService {
     /**
      * Get all ratings for a provider
      */
-    public Page<Rating> getProviderRatings(Long providerId, Pageable pageable) {
-        log.info("Fetching ratings for provider: {} with pagination: page={}, size={}",
-                providerId, pageable.getPageNumber(), pageable.getPageSize());
+    public Page<Rating> getProviderRatings(Long providerId, int page, int size) {
+        log.info("Fetching ratings for provider: {}", providerId);
 
         if (!userRepository.existsById(providerId)) {
-            log.warn("Provider not found: {}", providerId);
             throw new ResourceNotFoundException("Provider not found");
         }
-        if (pageable.getPageNumber() < 0) {
-            throw new IllegalArgumentException("Page number must be >= 0");
+        if (page < 0) {
+            throw new IllegalArgumentException("Page must be >= 0");
         }
-        if (pageable.getPageSize() < 1 || pageable.getPageSize() > 100) {
-            throw new IllegalArgumentException("Page size must be between 1 and 100");
+        if (size < 1 || size > 100) {
+            throw new IllegalArgumentException("Size must be 1-100");
         }
 
-        Page<Rating> ratings = ratingRepository.findByProviderId(providerId, pageable);
-
-        log.debug("Found {} ratings for provider: {} (Total: {}, Pages: {})",
-                ratings.getContent().size(), providerId, ratings.getTotalElements(), ratings.getTotalPages());
-
-        return ratings;
+        Pageable pageable = PageRequest.of(page, size);
+        return ratingRepository.findByProviderId(providerId, pageable);
     }
-
     /**
      * Get rating for a specific request
      */

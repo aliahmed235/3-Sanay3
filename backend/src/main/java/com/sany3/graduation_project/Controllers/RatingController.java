@@ -52,38 +52,16 @@ public class RatingController {
             @PathVariable Long providerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
         try {
-            log.info("GET /api/ratings/provider/{} - Fetching ratings (page: {}, size: {})",
-                    providerId, page, size);
-
-            // ✅ Create pageable object
-            Pageable pageable = PageRequest.of(page, size);
-
-            // ✅ Call service (all business logic happens here)
-            var ratings = ratingService.getProviderRatings(providerId, pageable);
-
-            // ✅ Map to response
+            var ratings = ratingService.getProviderRatings(providerId, page, size);
             var responses = ratings.map(ratingMapper::toRatingResponse);
-
-            // ✅ Return success
-            return ResponseEntity.ok(
-                    ApiResponse.success(responses, "Ratings retrieved successfully"));
-
+            return ResponseEntity.ok(ApiResponse.success(responses, "Ratings retrieved"));
         } catch (ResourceNotFoundException e) {
-            log.error("Provider not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid request parameters: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage()));
-
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("Unexpected error fetching ratings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Error fetching ratings"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("Error fetching ratings"));
         }
     }
 
