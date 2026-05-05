@@ -78,18 +78,16 @@ public class RatingService {
     /**
      * Get all ratings for a provider
      */
+    @Transactional(readOnly = true)
     public Page<Rating> getProviderRatings(Long providerId, int page, int size) {
         log.info("Fetching ratings for provider: {}", providerId);
 
-        if (!userRepository.existsById(providerId)) {
-            throw new ResourceNotFoundException("Provider not found");
-        }
-        if (page < 0) {
-            throw new IllegalArgumentException("Page must be >= 0");
-        }
-        if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("Size must be 1-100");
-        }
+        if (page < 0) throw new IllegalArgumentException("Page must be >= 0");
+        if (size < 1 || size > 100) throw new IllegalArgumentException("Size must be 1-100");
+
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+        
 
         Pageable pageable = PageRequest.of(page, size);
         return ratingRepository.findByProviderId(providerId, pageable);
@@ -132,7 +130,7 @@ public class RatingService {
                 .providerId(providerId)
                 .averageRating(avgRating != null ? avgRating : 0.0)
                 .totalRatings(ratingCount != null ? ratingCount : 0L)
-                .totalEarnings(0.0)  // TODO: Implement with payment table
+                .totalEarnings(0.0)
                 .build();
     }
 
