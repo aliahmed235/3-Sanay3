@@ -7,8 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:talat_sanaye3/providers/theme_provider.dart';
 import 'package:talat_sanaye3/screens/sanay3y_signup_step3_page.dart';
-import 'package:talat_sanaye3/widges/logo.dart';
-import 'package:talat_sanaye3/widges/text_feild_widget.dart';
+import 'package:talat_sanaye3/widgets/logo.dart';
+import 'package:talat_sanaye3/widgets/text_feild_widget.dart';
 
 class Sanay3yStep2 extends StatefulWidget {
   const Sanay3yStep2({super.key});

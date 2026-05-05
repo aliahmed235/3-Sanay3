@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:talat_sanaye3/providers/theme_provider.dart';
 import 'package:talat_sanaye3/screens/sanay3y-signup-step2.dart';
-import 'package:talat_sanaye3/widges/Button_widget.dart';
-import 'package:talat_sanaye3/widges/buildDropdown.dart';
-import 'package:talat_sanaye3/widges/logo.dart';
-import 'package:talat_sanaye3/widges/text_feild_widget.dart';
+import 'package:talat_sanaye3/widgets/Button_widget.dart';
+import 'package:talat_sanaye3/widgets/buildDropdown.dart';
+import 'package:talat_sanaye3/widgets/logo.dart';
+import 'package:talat_sanaye3/widgets/text_feild_widget.dart';
 
 class Sanay3yStep1 extends StatefulWidget {
   const Sanay3yStep1({super.key});

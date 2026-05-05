@@ -8,8 +8,8 @@ import 'package:talat_sanaye3/providers/auth_session_provider.dart';
 import 'package:talat_sanaye3/providers/theme_provider.dart';
 import 'package:talat_sanaye3/screens/user/user_home_screen.dart';
 import 'package:talat_sanaye3/services/Auth_services.dart';
-import 'package:talat_sanaye3/widges/logo.dart';
-import 'package:talat_sanaye3/widges/text_feild_widget.dart';
+import 'package:talat_sanaye3/widgets/logo.dart';
+import 'package:talat_sanaye3/widgets/text_feild_widget.dart';
 
 class UserSignUpPage extends StatefulWidget {
   const UserSignUpPage({super.key});

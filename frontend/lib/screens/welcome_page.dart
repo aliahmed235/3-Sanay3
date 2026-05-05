@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:talat_sanaye3/providers/theme_provider.dart';
 import 'package:talat_sanaye3/screens/SignIn_page.dart';
-import 'package:talat_sanaye3/widges/logo.dart';
+import 'package:talat_sanaye3/widgets/logo.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
