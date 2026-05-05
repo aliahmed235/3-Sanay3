@@ -59,6 +59,15 @@ public class RatingController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/request/{requestId}")
+    public ResponseEntity<RatingResponse> getRatingForRequest(
+            @PathVariable Long requestId) {
+        log.info("GET /api/ratings/request/{} - Fetching rating", requestId);
+
+        Rating rating = ratingService.getRatingForRequest(requestId);
+        return ResponseEntity.ok(ratingMapper.toRatingResponse(rating));
+    }
+
     /**
      * Get provider average rating
      * GET /api/ratings/provider/{providerId}/average

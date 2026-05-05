@@ -87,7 +87,7 @@ public class RatingService {
 
         User provider = userRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
-        
+
 
         Pageable pageable = PageRequest.of(page, size);
         return ratingRepository.findByProviderId(providerId, pageable);
@@ -95,12 +95,17 @@ public class RatingService {
     /**
      * Get rating for a specific request
      */
+    @Transactional(readOnly = true)
     public Rating getRatingForRequest(Long requestId) {
         log.debug("Fetching rating for request: {}", requestId);
-        return ratingRepository.findByRequestId(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Rating not found"));
-    }
 
+        if (!serviceRequestRepository.existsById(requestId)) {
+            throw new ResourceNotFoundException("Request not found");
+        }
+
+        return ratingRepository.findByRequestId(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rating not found for this request"));
+    }
     /**
      * Get average rating for a provider
      */
