@@ -84,4 +84,6 @@ public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long
      */
     @Query("SELECT AVG(so.offeredPrice) FROM ServiceOffer so WHERE so.request.id = :requestId")
     Double getAverageOfferPrice(@Param("requestId") Long requestId);
+
+    Long countByRequestIdAndIdLessThan(Long requestId, Long id);
 }
