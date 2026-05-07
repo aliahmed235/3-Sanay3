@@ -21,12 +21,6 @@ public class ChatRoomResponse {
     private Long id;
 
     /**
-     * Request ID this chat is for
-     */
-    private Long requestId;
-    private String requestTitle;
-
-    /**
      * Customer info
      */
     private Long customerId;
