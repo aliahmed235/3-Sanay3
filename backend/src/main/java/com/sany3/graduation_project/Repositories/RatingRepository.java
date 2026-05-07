@@ -3,6 +3,7 @@ package com.sany3.graduation_project.Repositories;
 import com.sany3.graduation_project.entites.Rating;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,8 +14,10 @@ import java.util.Optional;
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
 
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     Page<Rating> findByProviderId(Long providerId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"request", "customer", "provider"})
     Optional<Rating> findByRequestId(Long requestId);
 
     Long countByProviderId(Long providerId);
