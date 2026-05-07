@@ -27,17 +27,6 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
-    /**
-     * Get chat room for a request
-     *
-     * @param requestId Request ID
-     * @return Chat room
-     */
-    public ChatRoom getChatRoomByRequest(Long requestId) {
-        log.debug("Fetching chat room for request: {}", requestId);
-        return chatRoomRepository.findByRequestId(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Chat room not found"));
-    }
 
     /**
      * Get chat room by ID
@@ -248,8 +237,7 @@ public class ChatService {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
 
-        // Validate sender
-        if (!message.getSender().getId().equals(userId)) {
+        if (message.getSender() == null || !message.getSender().getId().equals(userId)) {
             throw new IllegalArgumentException("You can only delete your own messages");
         }
 
@@ -263,6 +251,24 @@ public class ChatService {
     private boolean isUserInChatRoom(ChatRoom chatRoom, Long userId) {
         return chatRoom.getCustomer().getId().equals(userId) ||
                 chatRoom.getProvider().getId().equals(userId);
+    }
+
+    public ChatMessage sendSystemMessage(Long chatRoomId, String message) {
+        log.info("Sending system message in chat room: {}", chatRoomId);
+
+        ChatRoom chatRoom = getChatRoomById(chatRoomId);
+
+        ChatMessage chatMessage = ChatMessage.builder()
+                .chatRoom(chatRoom)
+                .sender(null)
+                .message(message)
+                .messageType(ChatMessageType.SYSTEM)
+                .build();
+
+        chatMessage = chatMessageRepository.save(chatMessage);
+        log.info("System message saved with ID: {}", chatMessage.getId());
+
+        return chatMessage;
     }
 
     /**
