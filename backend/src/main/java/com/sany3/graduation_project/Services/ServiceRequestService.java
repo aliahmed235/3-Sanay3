@@ -17,6 +17,7 @@ import  com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.Repositories.ChatRoomRepository;
 import com.sany3.graduation_project.Repositories.RatingRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class ServiceRequestService {
     private final UserRepository userRepository;
     private final ServiceOfferRepository serviceOfferRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatService chatService;
     private final RatingRepository ratingRepository;
 
     /**
@@ -171,8 +173,13 @@ public class ServiceRequestService {
             }
         }
 
-        // Create chat room
-        createChatRoomForRequest(request, offer.getProvider());
+        // Find or create chat room for this customer-provider pair
+        ChatRoom chatRoom = findOrCreateChatRoom(request.getCustomer(), offer.getProvider());
+        request.setChatRoom(chatRoom);
+        request = serviceRequestRepository.save(request);
+
+        chatService.sendSystemMessage(chatRoom.getId(),
+                "New request accepted: " + request.getTitle());
 
         log.info("Offer accepted. Request status: ACCEPTED");
         return request;
@@ -199,6 +206,11 @@ public class ServiceRequestService {
         request.setStartedAt(LocalDateTime.now());
         request = serviceRequestRepository.save(request);
 
+        if (request.getChatRoom() != null) {
+            chatService.sendSystemMessage(request.getChatRoom().getId(),
+                    "Service started: " + request.getTitle());
+        }
+
         log.info("Service started for request: {}", requestId);
         return request;
     }
@@ -223,6 +235,17 @@ public class ServiceRequestService {
         request.setStatus(RequestStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());
         request = serviceRequestRepository.save(request);
+
+        if (request.getChatRoom() != null && request.getStartedAt() != null) {
+            Duration duration = Duration.between(request.getStartedAt(), request.getCompletedAt());
+            long hours = duration.toHours();
+            long minutes = duration.toMinutesPart();
+            String durationText = hours > 0
+                    ? hours + "h " + minutes + "m"
+                    : minutes + " minutes";
+            chatService.sendSystemMessage(request.getChatRoom().getId(),
+                    request.getTitle() + " finished - took " + durationText);
+        }
 
         log.info("Service completed for request: {}", requestId);
         return request;
@@ -264,17 +287,16 @@ public class ServiceRequestService {
         log.debug("Expired {} requests", expiredRequests.size());
     }
 
-    /**
-     * Create chat room when offer is accepted
-     */
-    private void createChatRoomForRequest(ServiceRequest request, User provider) {
-        ChatRoom chatRoom = ChatRoom.builder()
-                .request(request)
-                .customer(request.getCustomer())
-                .provider(provider)
-                .build();
-
-        chatRoomRepository.save(chatRoom);
-        log.info("Chat room created for request: {}", request.getId());
+    private ChatRoom findOrCreateChatRoom(User customer, User provider) {
+        return chatRoomRepository.findByCustomerIdAndProviderId(customer.getId(), provider.getId())
+                .orElseGet(() -> {
+                    ChatRoom chatRoom = ChatRoom.builder()
+                            .customer(customer)
+                            .provider(provider)
+                            .build();
+                    chatRoom = chatRoomRepository.save(chatRoom);
+                    log.info("New chat room created for customer {} and provider {}", customer.getId(), provider.getId());
+                    return chatRoom;
+                });
     }
 }
