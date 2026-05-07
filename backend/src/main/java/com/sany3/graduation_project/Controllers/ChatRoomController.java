@@ -1,6 +1,9 @@
 package com.sany3.graduation_project.Controllers;
 
 import com.sany3.graduation_project.Services.ChatService;
+import com.sany3.graduation_project.Services.CloudinaryStorageService;
+import com.sany3.graduation_project.Services.ServiceRequestService;
+import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.dto.request.ChatMessageRequest;
 import com.sany3.graduation_project.dto.response.ApiResponse;
 import com.sany3.graduation_project.dto.response.ChatRoomResponse;
@@ -18,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +34,8 @@ import java.util.stream.Collectors;
 public class ChatRoomController {
 
     private final ChatService chatService;
+    private final CloudinaryStorageService cloudinaryStorageService;
+    private final ServiceRequestService serviceRequestService;
     private final ChatRoomMapper chatRoomMapper;
     private final ChatMessageMapper chatMessageMapper;
 
@@ -63,9 +69,12 @@ public class ChatRoomController {
             Authentication authentication) {
         log.info("Fetching chat room for request: {}", requestId);
 
-        var chatRoom = chatService.getChatRoomByRequest(requestId);
-        chatService.validateUserAccess(chatRoom.getId(), (Long) authentication.getPrincipal());
-        var response = chatRoomMapper.toChatRoomResponse(chatRoom);
+        ServiceRequest request = serviceRequestService.getRequestById(requestId);
+        if (request.getChatRoom() == null) {
+            return ResponseEntity.ok(ApiResponse.success(null, "No chat room for this request"));
+        }
+        chatService.validateUserAccess(request.getChatRoom().getId(), (Long) authentication.getPrincipal());
+        var response = chatRoomMapper.toChatRoomResponse(request.getChatRoom());
 
         return ResponseEntity.ok(ApiResponse.success(response, "Chat room retrieved successfully"));
     }
@@ -182,6 +191,28 @@ public class ChatRoomController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Photo sent successfully"));
+    }
+
+    /**
+     * Upload and send photo message (file upload)
+     * POST /api/chats/{chatRoomId}/message/photo/upload
+     */
+    @PostMapping("/{chatRoomId}/message/photo/upload")
+    public ResponseEntity<ApiResponse<ChatMessageDto>> uploadAndSendPhoto(
+            @PathVariable Long chatRoomId,
+            @RequestParam("photo") MultipartFile photo,
+            Authentication authentication) {
+        log.info("Uploading photo in chat room: {}", chatRoomId);
+
+        Long senderId = (Long) authentication.getPrincipal();
+        chatService.validateUserAccess(chatRoomId, senderId);
+
+        String photoUrl = cloudinaryStorageService.upload(photo, "chat/" + chatRoomId);
+        var message = chatService.sendPhotoMessage(chatRoomId, senderId, photoUrl);
+        var response = chatMessageMapper.toChatMessageDto(message);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Photo uploaded and sent successfully"));
     }
 
     /**
