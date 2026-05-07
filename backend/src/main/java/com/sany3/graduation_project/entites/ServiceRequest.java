@@ -168,11 +168,8 @@ public class ServiceRequest {
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceOffer> offers;
 
-    /**
-     * Chat room for this request
-     * One-to-one: 1 request → 1 chat room (after acceptance)
-     */
-    @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
     /**
