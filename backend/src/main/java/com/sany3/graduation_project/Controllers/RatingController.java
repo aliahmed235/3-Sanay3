@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,8 +35,9 @@ public class RatingController {
     public ResponseEntity<RatingResponse> createRating(
             @PathVariable Long requestId,
             @RequestBody CreateRatingRequest request,
-            @RequestHeader("X-User-Id") Long customerId) {
-        log.info("POST /api/ratings/request/{} - Creating rating", requestId);
+            Authentication authentication) {
+        Long customerId = (Long) authentication.getPrincipal();
+        log.info("POST /api/ratings/request/{} - Creating rating by customer {}", requestId, customerId);
 
         Rating rating = ratingService.createRating(customerId, requestId, request);
         RatingResponse response = ratingMapper.toRatingResponse(rating);
