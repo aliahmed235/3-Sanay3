@@ -17,12 +17,13 @@ public class ChatMessageMapper {
             return null;
         }
 
+        var sender = chatMessage.getSender();
         return ChatMessageDto.builder()
                 .id(chatMessage.getId())
                 .chatRoomId(chatMessage.getChatRoom().getId())
-                .senderId(chatMessage.getSender().getId())
-                .senderName(chatMessage.getSender().getName())
-                .senderAvatar(chatMessage.getSender().getProfileImage())
+                .senderId(sender != null ? sender.getId() : null)
+                .senderName(sender != null ? sender.getName() : "System")
+                .senderAvatar(sender != null ? sender.getProfileImage() : null)
                 .message(chatMessage.getMessage())
                 .messageType(chatMessage.getMessageType())
                 .latitude(chatMessage.getLatitude())
@@ -40,14 +41,15 @@ public class ChatMessageMapper {
             return null;
         }
 
-        boolean isOwn = chatMessage.getSender().getId().equals(currentUserId);
+        var sender = chatMessage.getSender();
+        boolean isOwn = sender != null && sender.getId().equals(currentUserId);
 
         return ChatMessageResponse.builder()
                 .id(chatMessage.getId())
                 .chatRoomId(chatMessage.getChatRoom().getId())
-                .senderId(chatMessage.getSender().getId())
-                .senderName(chatMessage.getSender().getName())
-                .senderAvatar(chatMessage.getSender().getProfileImage())
+                .senderId(sender != null ? sender.getId() : null)
+                .senderName(sender != null ? sender.getName() : "System")
+                .senderAvatar(sender != null ? sender.getProfileImage() : null)
                 .message(chatMessage.getMessage())
                 .messageType(chatMessage.getMessageType())
                 .latitude(chatMessage.getLatitude())
