@@ -43,7 +43,9 @@ public enum ChatMessageType {
      *
      * Future feature - not implemented yet
      */
-    PHOTO("Photo message");
+    PHOTO("Photo message"),
+
+    SYSTEM("System message");
 
     private final String displayName;
 
