@@ -23,12 +23,15 @@ import java.util.List;
  *   → Ali and Hassan can now message each other
  */
 @Entity
-@Table(name = "chat_rooms", indexes = {
-        @Index(name = "idx_request_id", columnList = "request_id"),
-        @Index(name = "idx_customer_id", columnList = "customer_id"),
-        @Index(name = "idx_provider_id", columnList = "provider_id"),
-        @Index(name = "idx_created_at", columnList = "created_at")
-})
+@Table(name = "chat_rooms",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_customer_provider", columnNames = {"customer_id", "provider_id"})
+        },
+        indexes = {
+                @Index(name = "idx_customer_id", columnList = "customer_id"),
+                @Index(name = "idx_provider_id", columnList = "provider_id"),
+                @Index(name = "idx_created_at", columnList = "created_at")
+        })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,30 +42,10 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * The service request this chat is for
-     * One-to-One: 1 request = 1 chat room
-     *
-     * Unique constraint ensures only 1 chat per request
-     */
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id", unique = true, nullable = false)
-    private ServiceRequest request;
-
-    /**
-     * Customer side of conversation
-     *
-     * Example: Ali Ahmed
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private User customer;
 
-    /**
-     * Provider side of conversation
-     *
-     * Example: Hassan Khan
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_id", nullable = false)
     private User provider;
