@@ -25,8 +25,6 @@ public class ChatRoomMapper {
 
         return ChatRoomResponse.builder()
                 .id(chatRoom.getId())
-                .requestId(chatRoom.getRequest().getId())
-                .requestTitle(chatRoom.getRequest().getTitle())
                 .customerId(chatRoom.getCustomer().getId())
                 .customerName(chatRoom.getCustomer().getName())
                 .customerAvatar(chatRoom.getCustomer().getProfileImage())
