@@ -1,6 +1,7 @@
 package com.sany3.graduation_project.mapper;
 
 import com.sany3.graduation_project.Repositories.RatingRepository;
+import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.dto.response.ProviderPreviewResponse;
 import com.sany3.graduation_project.dto.response.ServiceOfferResponse;
 import com.sany3.graduation_project.entites.ServiceOffer;
@@ -13,14 +14,20 @@ import org.springframework.stereotype.Component;
 public class ServiceOfferMapper {
 
     private final RatingRepository ratingRepository;
+    private final ServiceOfferRepository serviceOfferRepository;
 
     public ServiceOfferResponse toServiceOfferResponse(ServiceOffer offer) {
         if (offer == null) return null;
 
         ProviderPreviewResponse provider = buildProviderPreview(offer.getProvider());
 
+        Long countBefore = serviceOfferRepository.countByRequestIdAndIdLessThan(
+                offer.getRequest().getId(), offer.getId());
+        int offerNumber = (int) (countBefore + 1);
+
         return ServiceOfferResponse.builder()
                 .id(offer.getId())
+                .offerNumber(offerNumber)
                 .requestId(offer.getRequest().getId())
                 .provider(provider)
                 .offeredPrice(offer.getOfferedPrice())
