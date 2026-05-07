@@ -55,7 +55,7 @@ public class ChatMessage {
      * Example: Hassan Khan (provider)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id")
     private User sender;
 
     /**
