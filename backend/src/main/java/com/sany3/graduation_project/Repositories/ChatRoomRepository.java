@@ -13,45 +13,22 @@ import java.util.Optional;
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     @Override
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
+    @EntityGraph(attributePaths = {"customer", "provider"})
     Optional<ChatRoom> findById(Long id);
 
-    /**
-     * Find chat room for a specific request
-     * Since 1 request = 1 chat room
-     */
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
-    Optional<ChatRoom> findByRequestId(Long requestId);
+    @EntityGraph(attributePaths = {"customer", "provider"})
+    Optional<ChatRoom> findByCustomerIdAndProviderId(Long customerId, Long providerId);
 
-    /**
-     * Get all chat rooms for a user (either as customer or provider)
-     */
     @Query("SELECT cr FROM ChatRoom cr WHERE cr.customer.id = :userId OR cr.provider.id = :userId ORDER BY cr.createdAt DESC")
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
+    @EntityGraph(attributePaths = {"customer", "provider"})
     List<ChatRoom> findUserChatRooms(@Param("userId") Long userId);
 
-    /**
-     * Get all chat rooms for a user as customer
-     */
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
+    @EntityGraph(attributePaths = {"customer", "provider"})
     List<ChatRoom> findByCustomerId(Long customerId);
 
-    /**
-     * Get all chat rooms for a user as provider
-     */
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
+    @EntityGraph(attributePaths = {"customer", "provider"})
     List<ChatRoom> findByProviderId(Long providerId);
 
-    /**
-     * Find chat between specific customer and provider for a request
-     */
-    @EntityGraph(attributePaths = {"request", "customer", "provider"})
-    Optional<ChatRoom> findByCustomerIdAndProviderIdAndRequestId(
-            Long customerId, Long providerId, Long requestId);
-
-    /**
-     * Check if a user is one of the two participants in a chat room.
-     */
     @Query("SELECT COUNT(cr) FROM ChatRoom cr WHERE cr.id = :roomId AND (cr.customer.id = :userId OR cr.provider.id = :userId)")
     Long countRoomMembership(@Param("roomId") Long roomId, @Param("userId") Long userId);
 }
