@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class ServiceOfferResponse {
 
     private Long id;
+    private Integer offerNumber;
     private Long requestId;
     private ProviderPreviewResponse provider;
     private BigDecimal offeredPrice;
