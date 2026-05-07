@@ -17,7 +17,7 @@ import java.util.List;
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
 
     @Override
-    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating", "chatRoom"})
     java.util.Optional<ServiceRequest> findById(Long id);
 
     /**
