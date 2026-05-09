@@ -42,7 +42,7 @@ public class ServiceRequestService {
      * @param request Create request DTO
      * @return Created service request
      */
-    public ServiceRequest createServiceRequest(Long customerId, CreateServiceRequestRequest request) {
+    public ServiceRequest createServiceRequest(Long customerId, CreateServiceRequestRequest request, String photoUrl) {
         log.info("Creating service request for customer: {}", customerId);
 
         User customer = userRepository.findById(customerId)
@@ -56,6 +56,7 @@ public class ServiceRequestService {
                 .serviceType(request.getServiceType())
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .photoUrl(photoUrl)
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
