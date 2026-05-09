@@ -19,6 +19,11 @@ public class CloudinaryStorageService {
             "image/jpeg",
             "image/png",
             "image/webp",
+            "image/heic",
+            "image/heif",
+            "image/gif",
+            "image/bmp",
+            "application/octet-stream",
             "application/pdf"
     );
 
