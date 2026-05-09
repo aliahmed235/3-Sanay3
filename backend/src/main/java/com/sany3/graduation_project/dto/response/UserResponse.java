@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.sany3.graduation_project.entites.ServiceType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -25,7 +27,8 @@ public class UserResponse {
     private BigDecimal longitude;
     private String profileImage;
     private Boolean isActive;
-    private Set<String> roles;
+    private String role;           // "USER" or "SERVICE_PROVIDER"
+    private ServiceType serviceType; // only for providers (CARPENTER, WATER, ELECTRICITY)
     private String profilePictureUrl;
     private LocalDateTime createdAt;
 }
