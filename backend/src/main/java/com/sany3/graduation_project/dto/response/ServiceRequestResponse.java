@@ -24,6 +24,7 @@ public class ServiceRequestResponse {
     private ServiceType serviceType;
     private String title;
     private String description;
+    private String photoUrl;
     private String address;
     private BigDecimal latitude;
     private BigDecimal longitude;
