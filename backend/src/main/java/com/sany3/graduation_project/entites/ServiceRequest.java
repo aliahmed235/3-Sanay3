@@ -72,6 +72,13 @@ public class ServiceRequest {
     private String description;
 
     /**
+     * Optional photo URL (uploaded to Cloudinary)
+     * Customer can attach a photo showing the problem
+     */
+    @Column(length = 500)
+    private String photoUrl;
+
+    /**
      * Customer's address
      * Example: "House #123, Clifton, Karachi"
      */
