@@ -1,5 +1,6 @@
 package com.sany3.graduation_project.Controllers;
 
+import com.sany3.graduation_project.Services.CloudinaryStorageService;
 import com.sany3.graduation_project.Services.ServiceRequestService;
 import com.sany3.graduation_project.dto.request.CreateServiceRequestRequest;
 import com.sany3.graduation_project.dto.response.ApiResponse;
@@ -15,9 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,19 +32,27 @@ import java.util.List;
 public class ServiceRequestController {
 
     private final ServiceRequestService serviceRequestService;
-    private final ServiceRequestMapper serviceRequestMapper; // ✅ ADD THIS
+    private final ServiceRequestMapper serviceRequestMapper;
+    private final CloudinaryStorageService cloudinaryStorageService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ServiceRequestResponse>> createRequest(
-            @Valid @RequestBody CreateServiceRequestRequest request,
+            @Valid @RequestPart("request") CreateServiceRequestRequest request,
+            @RequestPart(value = "photo", required = false) MultipartFile photo,
             Authentication authentication) {
 
         Long customerId = (Long) authentication.getPrincipal();
-        ServiceRequest result = serviceRequestService.createServiceRequest(customerId, request);
+
+        String photoUrl = null;
+        if (photo != null && !photo.isEmpty()) {
+            photoUrl = cloudinaryStorageService.upload(photo, "requests");
+        }
+
+        ServiceRequest result = serviceRequestService.createServiceRequest(customerId, request, photoUrl);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
-                        serviceRequestMapper.toServiceRequestResponse(result), // ✅
+                        serviceRequestMapper.toServiceRequestResponse(result),
                         Constants.SUCCESS_MESSAGE.REQUEST_CREATED));
     }
 
