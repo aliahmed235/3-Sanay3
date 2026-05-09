@@ -1,7 +1,9 @@
 package com.sany3.graduation_project.mapper;
 
 import com.sany3.graduation_project.dto.response.UserResponse;
+import com.sany3.graduation_project.entites.ServiceType;
 import com.sany3.graduation_project.entites.User;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +18,16 @@ public class UserMapper {
             return null;
         }
 
+        String role = null;
+        if (Hibernate.isInitialized(user.getUserRoles()) && user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            role = user.getRoleNames().stream().findFirst().orElse(null);
+        }
+
+        ServiceType serviceType = null;
+        if (Hibernate.isInitialized(user.getServiceProviderProfile()) && user.getServiceProviderProfile() != null) {
+            serviceType = user.getServiceProviderProfile().getServiceType();
+        }
+
         return UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -26,6 +38,8 @@ public class UserMapper {
                 .latitude(user.getLatitude())
                 .longitude(user.getLongitude())
                 .isActive(user.getIsActive())
+                .role(role)
+                .serviceType(serviceType)
                 .createdAt(user.getCreatedAt())
                 .build();
     }
