@@ -37,7 +37,7 @@ public class ServiceRequestController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ServiceRequestResponse>> createRequest(
-            @Valid @RequestPart("request") CreateServiceRequestRequest request,
+            @Valid @ModelAttribute CreateServiceRequestRequest request,
             @RequestPart(value = "photo", required = false) MultipartFile photo,
             Authentication authentication) {
 
