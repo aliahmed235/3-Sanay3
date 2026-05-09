@@ -32,6 +32,7 @@ public class ServiceRequestMapper {
                 .serviceType(request.getServiceType())
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .photoUrl(request.getPhotoUrl())
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
