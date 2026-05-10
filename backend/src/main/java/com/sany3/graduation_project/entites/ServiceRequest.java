@@ -169,11 +169,30 @@ public class ServiceRequest {
     private LocalDateTime expiresAt;
 
     /**
+     * Scheduled date/time for the service
+     * null = immediate (right now), set = scheduled for later
+     */
+    @Column
+    private LocalDateTime scheduledAt;
+
+    /**
+     * Provider's description of work done after completion (optional)
+     */
+    @Column(columnDefinition = "TEXT")
+    private String workSummary;
+
+    /**
      * All offers for this request
      * One-to-many: 1 request → multiple offers
      */
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceOffer> offers;
+
+    /**
+     * Photos of completed work uploaded by provider
+     */
+    @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkPhoto> workPhotos;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_room_id")
