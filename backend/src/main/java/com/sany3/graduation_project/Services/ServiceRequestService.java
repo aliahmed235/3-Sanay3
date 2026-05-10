@@ -92,12 +92,11 @@ public class ServiceRequestService {
      * @param pageable Pagination
      * @return Page of open requests
      */
-    public Page<ServiceRequest> getOpenRequestsByType(ServiceType serviceType, Long providerId, Pageable pageable) {
-        log.debug("Fetching open requests for service type: {} excluding provider: {}", serviceType, providerId);
-        return serviceRequestRepository.findByServiceTypeAndStatusExcludingOffered(
+    public Page<ServiceRequest> getOpenRequestsByType(ServiceType serviceType, Pageable pageable) {
+        log.debug("Fetching open requests for service type: {}", serviceType);
+        return serviceRequestRepository.findByServiceTypeAndStatus(
                 serviceType,
                 RequestStatus.OPEN,
-                providerId,
                 pageable
         );
     }
@@ -111,8 +110,8 @@ public class ServiceRequestService {
      * @param serviceType Filter by service type
      * @return List of nearby requests
      */
-    public List<ServiceRequest> getNearbyRequests(BigDecimal latitude, BigDecimal longitude, ServiceType serviceType, Long providerId) {
-        log.debug("Finding nearby requests for location: {}, {} excluding provider: {}", latitude, longitude, providerId);
+    public List<ServiceRequest> getNearbyRequests(BigDecimal latitude, BigDecimal longitude, ServiceType serviceType) {
+        log.debug("Finding nearby requests for location: {}, {}", latitude, longitude);
 
         Double radiusKm = Constants.SEARCH.DEFAULT_SEARCH_RADIUS_KM;
 
@@ -120,8 +119,7 @@ public class ServiceRequestService {
                 serviceType,
                 latitude,
                 longitude,
-                radiusKm,
-                providerId
+                radiusKm
         );
     }
 

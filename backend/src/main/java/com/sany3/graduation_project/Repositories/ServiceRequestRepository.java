@@ -41,19 +41,10 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
     /**
      * Get requests by service type and status
-     * Excludes requests the provider already offered on
+     * Used to show providers open work in their category
      */
     @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
-    @Query("SELECT sr FROM ServiceRequest sr " +
-            "WHERE sr.serviceType = :serviceType " +
-            "AND sr.status = :status " +
-            "AND sr.id NOT IN (SELECT so.request.id FROM ServiceOffer so WHERE so.provider.id = :providerId) " +
-            "ORDER BY sr.createdAt DESC")
-    Page<ServiceRequest> findByServiceTypeAndStatusExcludingOffered(
-            @Param("serviceType") ServiceType serviceType,
-            @Param("status") RequestStatus status,
-            @Param("providerId") Long providerId,
-            Pageable pageable);
+    Page<ServiceRequest> findByServiceTypeAndStatus(ServiceType serviceType, RequestStatus status, Pageable pageable);
 
     /**
      * Get active requests (OPEN, ACCEPTED)
@@ -88,21 +79,19 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
     /**
      * Find open requests by service type and nearby location
-     * Excludes requests the provider already offered on
+     * For provider map view (filtered by service type + distance)
      */
     @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
     @Query("SELECT sr FROM ServiceRequest sr " +
             "WHERE sr.serviceType = :serviceType " +
             "AND sr.status = 'OPEN' " +
-            "AND sr.id NOT IN (SELECT so.request.id FROM ServiceOffer so WHERE so.provider.id = :providerId) " +
             "AND SQRT(POWER(sr.latitude - :latitude, 2) + POWER(sr.longitude - :longitude, 2)) * 111 <= :radiusKm " +
             "ORDER BY sr.createdAt DESC")
     List<ServiceRequest> findOpenRequestsByServiceTypeNearby(
             @Param("serviceType") ServiceType serviceType,
             @Param("latitude") BigDecimal latitude,
             @Param("longitude") BigDecimal longitude,
-            @Param("radiusKm") Double radiusKm,
-            @Param("providerId") Long providerId);
+            @Param("radiusKm") Double radiusKm);
 
     /**
      * Find expired OPEN requests

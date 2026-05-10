@@ -79,14 +79,12 @@ public class ServiceRequestController {
     @GetMapping("/open/{serviceType}")
     public ResponseEntity<ApiResponse<Page<ServiceRequestResponse>>> getOpenRequests(
             @PathVariable ServiceType serviceType,
-            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Long providerId = (Long) authentication.getPrincipal();
         Pageable pageable = PageRequest.of(page, size);
         Page<ServiceRequestResponse> response = serviceRequestService
-                .getOpenRequestsByType(serviceType, providerId, pageable)
+                .getOpenRequestsByType(serviceType, pageable)
                 .map(serviceRequestMapper::toServiceRequestResponse);
 
         return ResponseEntity.ok(ApiResponse.success(response, Constants.SUCCESS_MESSAGE.RESOURCE_RETRIEVED));
@@ -96,12 +94,10 @@ public class ServiceRequestController {
     public ResponseEntity<ApiResponse<List<ServiceRequestResponse>>> getNearbyRequests(
             @RequestParam BigDecimal latitude,
             @RequestParam BigDecimal longitude,
-            @RequestParam ServiceType serviceType,
-            Authentication authentication) {
+            @RequestParam ServiceType serviceType) {
 
-        Long providerId = (Long) authentication.getPrincipal();
         List<ServiceRequestResponse> response = serviceRequestService
-                .getNearbyRequests(latitude, longitude, serviceType, providerId)
+                .getNearbyRequests(latitude, longitude, serviceType)
                 .stream()
                 .map(serviceRequestMapper::toServiceRequestResponse)
                 .toList();
