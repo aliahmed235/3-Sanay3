@@ -66,7 +66,7 @@ public class Constants {
      */
     public static final class SEARCH {
         // Default search radius in kilometers
-        public static final double DEFAULT_SEARCH_RADIUS_KM = 10.0;
+        public static final double DEFAULT_SEARCH_RADIUS_KM = 30.0;
 
         // Maximum search radius
         public static final double MAX_SEARCH_RADIUS_KM = 100.0;
