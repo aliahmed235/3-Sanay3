@@ -211,6 +211,13 @@ public class ServiceRequestService {
         request.setStartedAt(LocalDateTime.now());
         request = serviceRequestRepository.save(request);
 
+        // Update offer status to ONGOING
+        serviceOfferRepository.findByRequestIdAndStatusOrderByCreatedAtAsc(requestId, OfferStatus.ACCEPTED)
+                .ifPresent(offer -> {
+                    offer.setStatus(OfferStatus.ONGOING);
+                    serviceOfferRepository.save(offer);
+                });
+
         if (request.getChatRoom() != null) {
             chatService.sendSystemMessage(request.getChatRoom().getId(),
                     "Service started: " + request.getTitle());
@@ -240,6 +247,14 @@ public class ServiceRequestService {
         request.setStatus(RequestStatus.COMPLETED);
         request.setCompletedAt(LocalDateTime.now());
         request = serviceRequestRepository.save(request);
+
+        // Update offer status to COMPLETED
+        serviceOfferRepository.findByRequestIdAndStatusOrderByCreatedAtAsc(requestId, OfferStatus.ONGOING)
+                .ifPresent(offer -> {
+                    offer.setStatus(OfferStatus.COMPLETED);
+                    offer.setRespondedAt(LocalDateTime.now());
+                    serviceOfferRepository.save(offer);
+                });
 
         if (request.getChatRoom() != null && request.getStartedAt() != null) {
             Duration duration = Duration.between(request.getStartedAt(), request.getCompletedAt());
