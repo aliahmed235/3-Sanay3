@@ -3,9 +3,13 @@ package com.sany3.graduation_project.mapper;
 import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.dto.response.ServiceRequestResponse;
 import com.sany3.graduation_project.entites.ServiceRequest;
+import com.sany3.graduation_project.entites.WorkPhoto;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +31,13 @@ public class ServiceRequestMapper {
             offerCount = (long) request.getOffers().size();
         }
 
+        List<String> workPhotoUrls = Collections.emptyList();
+        if (Hibernate.isInitialized(request.getWorkPhotos()) && request.getWorkPhotos() != null) {
+            workPhotoUrls = request.getWorkPhotos().stream()
+                    .map(WorkPhoto::getPhotoUrl)
+                    .toList();
+        }
+
         return ServiceRequestResponse.builder()
                 .id(request.getId())
                 .serviceType(request.getServiceType())
@@ -44,8 +55,11 @@ public class ServiceRequestMapper {
                 .completedAt(request.getCompletedAt())
                 .createdAt(request.getCreatedAt())
                 .expiresAt(request.getExpiresAt())
+                .scheduledAt(request.getScheduledAt())
                 .offerCount(offerCount)
                 .rating(ratingResponse)
+                .workSummary(request.getWorkSummary())
+                .workPhotos(workPhotoUrls)
                 .build();
     }
 }
