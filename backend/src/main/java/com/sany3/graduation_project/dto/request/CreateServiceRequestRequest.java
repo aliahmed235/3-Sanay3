@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -37,4 +38,10 @@ public class CreateServiceRequestRequest {
     @DecimalMin(value = "-180", message = "Invalid longitude")
     @DecimalMax(value = "180", message = "Invalid longitude")
     private BigDecimal longitude;
+
+    /**
+     * Optional: schedule for a future date/time
+     * null = immediate request (right now)
+     */
+    private LocalDateTime scheduledAt;
 }
