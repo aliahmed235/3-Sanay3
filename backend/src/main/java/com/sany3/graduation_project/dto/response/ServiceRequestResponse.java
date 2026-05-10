@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Service request response DTO
@@ -36,6 +37,9 @@ public class ServiceRequestResponse {
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
+    private LocalDateTime scheduledAt;
     private Long offerCount;  // How many providers offered
     private RatingResponse rating;
+    private String workSummary;
+    private List<String> workPhotos;  // Cloudinary URLs
 }
