@@ -4,10 +4,7 @@ import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
 import com.sany3.graduation_project.Repositories.UserRepository;
 import com.sany3.graduation_project.dto.request.CreateServiceOfferRequest;
-import com.sany3.graduation_project.entites.OfferStatus;
-import com.sany3.graduation_project.entites.ServiceOffer;
-import com.sany3.graduation_project.entites.ServiceRequest;
-import com.sany3.graduation_project.entites.User;
+import com.sany3.graduation_project.entites.*;;
 import com.sany3.graduation_project.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.domain.PageImpl;
 @Service
 @Transactional
@@ -59,6 +57,19 @@ public class ServiceOfferService {
         // Check if request is still open
         if (!serviceRequest.getStatus().toString().equals("OPEN")) {
             throw new IllegalStateException("Request is no longer open");
+        }
+
+        // Check schedule conflict for scheduled requests
+        if (serviceRequest.getScheduledAt() != null && request.getEstimatedTimeMinutes() != null) {
+            LocalDateTime requestStart = serviceRequest.getScheduledAt();
+            LocalDateTime requestEnd = requestStart.plusMinutes(request.getEstimatedTimeMinutes());
+
+            List<ServiceRequest> conflicts = serviceRequestRepository.findConflictingJobs(
+                    providerId, requestStart, requestEnd);
+
+            if (!conflicts.isEmpty()) {
+                throw new IllegalStateException("You already have a job scheduled at this time");
+            }
         }
 
         ServiceOffer offer = ServiceOffer.builder()
