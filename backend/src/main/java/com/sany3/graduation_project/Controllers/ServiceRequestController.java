@@ -23,7 +23,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/requests")
 @RequiredArgsConstructor
@@ -74,13 +79,15 @@ public class ServiceRequestController {
     @GetMapping("/open/{serviceType}")
     public ResponseEntity<ApiResponse<Page<ServiceRequestResponse>>> getOpenRequests(
             @PathVariable ServiceType serviceType,
+            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
+        Long providerId = (Long) authentication.getPrincipal();
         Pageable pageable = PageRequest.of(page, size);
         Page<ServiceRequestResponse> response = serviceRequestService
-                .getOpenRequestsByType(serviceType, pageable)
-                .map(serviceRequestMapper::toServiceRequestResponse); // ✅
+                .getOpenRequestsByType(serviceType, providerId, pageable)
+                .map(serviceRequestMapper::toServiceRequestResponse);
 
         return ResponseEntity.ok(ApiResponse.success(response, Constants.SUCCESS_MESSAGE.RESOURCE_RETRIEVED));
     }
@@ -89,12 +96,14 @@ public class ServiceRequestController {
     public ResponseEntity<ApiResponse<List<ServiceRequestResponse>>> getNearbyRequests(
             @RequestParam BigDecimal latitude,
             @RequestParam BigDecimal longitude,
-            @RequestParam ServiceType serviceType) {
+            @RequestParam ServiceType serviceType,
+            Authentication authentication) {
 
+        Long providerId = (Long) authentication.getPrincipal();
         List<ServiceRequestResponse> response = serviceRequestService
-                .getNearbyRequests(latitude, longitude, serviceType)
+                .getNearbyRequests(latitude, longitude, serviceType, providerId)
                 .stream()
-                .map(serviceRequestMapper::toServiceRequestResponse) // ✅
+                .map(serviceRequestMapper::toServiceRequestResponse)
                 .toList();
 
         return ResponseEntity.ok(ApiResponse.success(response, Constants.SUCCESS_MESSAGE.RESOURCE_RETRIEVED));
@@ -150,7 +159,7 @@ public class ServiceRequestController {
             Authentication authentication) {
 
         ServiceRequestResponse response = serviceRequestMapper
-                .toServiceRequestResponse(serviceRequestService.cancelRequest(requestId)); // ✅
+                .toServiceRequestResponse(serviceRequestService.cancelRequest(requestId));
 
         return ResponseEntity.ok(ApiResponse.success(response, "Request cancelled"));
     }
