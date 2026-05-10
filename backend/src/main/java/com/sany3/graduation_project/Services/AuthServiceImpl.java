@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
     private final ServiceProviderProfileRepository providerProfileRepository;
     private final ProviderDocumentRepository providerDocumentRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;  // ← Use interface type
+    private final JwtService jwtService;
     private final UserMapper userMapper;
     private final CloudinaryStorageService cloudinaryStorageService;
 
