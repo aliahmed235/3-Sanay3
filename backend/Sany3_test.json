@@ -1,0 +1,3821 @@
+{
+  "info": {
+    "name": "Sany3 Graduation Project API - Server Test Suite",
+    "description": "Import into Postman, set baseUrl to your Railway backend URL, then run folders in order. Auto-generates unique users and captures tokens/IDs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get(\"runId\")) {",
+          "  const runId = Date.now().toString().slice(-8);",
+          "  pm.collectionVariables.set(\"runId\", runId);",
+          "  pm.collectionVariables.set(\"customerEmail\", `customer.${runId}@sany3.test`);",
+          "  pm.collectionVariables.set(\"providerEmail\", `provider.${runId}@sany3.test`);",
+          "  pm.collectionVariables.set(\"customerPhone\", `010${runId}`);",
+          "  pm.collectionVariables.set(\"providerPhone\", `011${runId}`);",
+          "  pm.collectionVariables.set(\"providerNationalId\", `29${runId}1234`);",
+          "}",
+          "if (!pm.collectionVariables.get(\"serviceType\")) {",
+          "  pm.collectionVariables.set(\"serviceType\", \"CARPENTER\");",
+          "}"
+        ]
+      }
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "00 - Read Me / Server Checks",
+      "item": [
+        {
+          "name": "SockJS WebSocket Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ws/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ws",
+                "info"
+              ]
+            },
+            "description": "Quick check that the SockJS websocket endpoint is reachable.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "WebSocket STOMP Usage Notes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ws/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ws",
+                "info"
+              ]
+            },
+            "description": "Realtime chat: connect to {{baseUrl}}/ws with SockJS/STOMP or {{baseUrl}}/ws-no-sockjs. CONNECT header Authorization: Bearer {{accessToken}}. Subscribe /topic/chatRoom/{{chatRoomId}}. Send to /app/chat/send/{{chatRoomId}} with JSON {chatRoomId,message,messageType}.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"{{customerEmail}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"customerAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"customerRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"customerId\", data.user.id);",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Provider JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/provider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "provider"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Provider\",\n  \"email\": \"{{providerEmail}}\",\n  \"phone\": \"{{providerPhone}}\",\n  \"password\": \"{{password}}\",\n  \"serviceType\": \"{{serviceType}}\",\n  \"nationalId\": \"{{providerNationalId}}\",\n  \"hourlyRate\": 250,\n  \"bio\": \"Experienced provider for Sany3 API testing.\",\n  \"address\": \"Test provider address\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357,\n  \"hasCriminalRecord\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"providerAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"providerRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"providerId\", data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Provider Multipart (Optional)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Multipart Provider",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "multipart.provider@sany3.test",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "0121234567",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
+                {
+                  "key": "serviceType",
+                  "value": "{{serviceType}}",
+                  "type": "text"
+                },
+                {
+                  "key": "nationalId",
+                  "value": "301234567890",
+                  "type": "text"
+                },
+                {
+                  "key": "hourlyRate",
+                  "value": "300",
+                  "type": "text"
+                },
+                {
+                  "key": "bio",
+                  "value": "Multipart provider registration test.",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "Test multipart address",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "30.0444",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "31.2357",
+                  "type": "text"
+                },
+                {
+                  "key": "hasCriminalRecord",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true
+                },
+                {
+                  "key": "criminalHistory",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/provider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "provider"
+              ]
+            },
+            "description": "Optional multipart variant. Enable file rows only if CLOUDINARY_URL is configured."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"multipartProviderAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"multipartProviderRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"multipartProviderId\", data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"customerAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"customerRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"customerId\", data.user.id);",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"providerAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"providerRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"providerId\", data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Customer Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{customerRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"customerAccessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"customerRefreshToken\", data.refreshToken);",
+                  "  if (data.user && data.user.id) pm.collectionVariables.set(\"customerId\", data.user.id);",
+                  "  if (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout Active Token (Run Last)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Run at the end only; this blacklists the active token.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Service Requests",
+      "item": [
+        {
+          "name": "Create Service Request (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceType\": \"{{serviceType}}\",\n  \"title\": \"Kitchen repair request\",\n  \"description\": \"Need help with a kitchen repair for API testing.\",\n  \"address\": \"Customer test address\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"requestId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Requests (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/my-requests?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "my-requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Open Requests by Type (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/open/{{serviceType}}?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "open",
+                "{{serviceType}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Nearby Requests (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/nearby?latitude=30.0444&longitude=31.2357&serviceType={{serviceType}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "30.0444"
+                },
+                {
+                  "key": "longitude",
+                  "value": "31.2357"
+                },
+                {
+                  "key": "serviceType",
+                  "value": "{{serviceType}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Request Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept Offer (Customer)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/accept-offer/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}",
+                "accept-offer",
+                "{{offerId}}"
+              ]
+            },
+            "description": "Run after creating an offer.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"acceptedRequestId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start Service",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}",
+                "start"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete Service",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}",
+                "complete"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Request (Use on separate request)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}",
+                "cancel"
+              ]
+            },
+            "description": "State-changing. Use on a throwaway request, not the one used for offer/chat/rating flow.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Service Offers",
+      "item": [
+        {
+          "name": "Create Offer (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": {{requestId}},\n  \"offeredPrice\": 750,\n  \"estimatedTimeMinutes\": 45,\n  \"description\": \"I can handle this request today.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"offerId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Offers for Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers/request/{{requestId}}?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers",
+                "request",
+                "{{requestId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Offers (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers/my-offers?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers",
+                "my-offers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Offer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Offer (Before Accept)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": {{requestId}},\n  \"offeredPrice\": 700,\n  \"estimatedTimeMinutes\": 35,\n  \"description\": \"Updated offer before acceptance.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw Offer (Use on separate offer)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "description": "State-changing. Use on a throwaway offer, not the one used for acceptance/chat flow.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Chat REST",
+      "item": [
+        {
+          "name": "Get My Chat Rooms (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Chat Room by Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/request/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "request",
+                "{{requestId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"chatRoomId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Chat Room Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/messages?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send Text Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message/text",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message",
+                "text"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hello from Postman test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"messageId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send Location Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message/location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message",
+                "location"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send Photo Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message",
+                "photo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photoUrl\": \"https://example.com/test-photo.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload and Send Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message/photo/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message",
+                "photo",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Latest Message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/latest-message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "latest-message"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Message Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message-count"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Message (Sender Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chats/{{chatRoomId}}/message/{{messageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{chatRoomId}}",
+                "message",
+                "{{messageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Ratings",
+      "item": [
+        {
+          "name": "Create Rating (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{customerId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/request/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "request",
+                "{{requestId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ratingValue\": 5,\n  \"review\": \"Excellent service from the API test flow.\",\n  \"minutesLate\": 0,\n  \"lateArrivalPenalty\": 0.0,\n  \"incompleteServicePenalty\": 0.0,\n  \"incompleteServiceReason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data && data.id) pm.collectionVariables.set(\"ratingId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Ratings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating for Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/request/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "request",
+                "{{requestId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Average Rating",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}/average",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}",
+                "average"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Rating Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}",
+                "count"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Penalty Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}/penalties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}",
+                "penalties"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is not 5xx\", function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Provider Schedule",
+      "item": [
+        {
+          "name": "Get Today's Schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider/schedule/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider", "schedule", "today"]
+            },
+            "description": "Default view when opening the schedule screen. Shows all jobs for today with statuses.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has data array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Each job has status field', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    json.data.forEach(function(job) {",
+                  "      pm.expect(job).to.have.property('status');",
+                  "      pm.expect(job).to.have.property('requestId');",
+                  "      pm.expect(job).to.have.property('title');",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Job Dates (Calendar)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider/schedule/dates",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider", "schedule", "dates"]
+            },
+            "description": "Returns dates that have jobs for calendar highlighting. Includes all statuses.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has data array of dates', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Dates are in ISO format', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    json.data.forEach(function(d) {",
+                  "      pm.expect(d).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                  "    });",
+                  "  }",
+                  "});",
+                  "// Save first date for next request",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    pm.collectionVariables.set('scheduleDate', json.data[0]);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule for Specific Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider/schedule?date={{scheduleDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider", "schedule"],
+              "query": [
+                { "key": "date", "value": "{{scheduleDate}}" }
+              ]
+            },
+            "description": "Get all jobs for a specific date. Run after 'Get Job Dates' to use a real date.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has data array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Jobs have required fields', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    const job = json.data[0];",
+                  "    pm.expect(job).to.have.property('requestId');",
+                  "    pm.expect(job).to.have.property('title');",
+                  "    pm.expect(job).to.have.property('status');",
+                  "    pm.expect(job).to.have.property('serviceType');",
+                  "    pm.expect(job).to.have.property('customerName');",
+                  "  }",
+                  "});",
+                  "pm.test('Status is valid enum', function () {",
+                  "  const valid = ['ACCEPTED', 'ONGOING', 'COMPLETED', 'CANCELLED'];",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    json.data.forEach(function(job) {",
+                  "      pm.expect(valid).to.include(job.status);",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Upcoming Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider/schedule/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider", "schedule", "upcoming"]
+            },
+            "description": "Only ACCEPTED and ONGOING jobs. What's left to do.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has data array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Only active statuses returned', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    json.data.forEach(function(job) {",
+                  "      pm.expect(['ACCEPTED', 'ONGOING']).to.include(job.status);",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Full Schedule (Grouped by Day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider/schedule/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider", "schedule", "all"]
+            },
+            "description": "All jobs grouped by date. Includes completed and cancelled.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response data is an object (grouped by date)', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data) {",
+                  "    pm.expect(json.data).to.be.an('object');",
+                  "  }",
+                  "});",
+                  "pm.test('Each group key is a date and value is array', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data) {",
+                  "    Object.keys(json.data).forEach(function(key) {",
+                  "      pm.expect(key).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                  "      pm.expect(json.data[key]).to.be.an('array');",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Work Summary & Portfolio",
+      "item": [
+        {
+          "name": "Add Work Summary (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/work-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests", "{{requestId}}", "work-summary"]
+            },
+            "description": "Add a work summary after completing a job. Send description + optional photos as multipart form-data. Run after 'Complete Service'.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "Fixed the kitchen pipe and replaced the faucet. All working perfectly now.",
+                  "type": "text"
+                },
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true,
+                  "description": "Enable and select files to upload work photos"
+                },
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true,
+                  "description": "Second photo (optional)"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test('Response has work summary data', function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  pm.expect(data).to.have.property('requestId');",
+                  "  pm.expect(data).to.have.property('description');",
+                  "});",
+                  "pm.test('Description matches input', function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  pm.expect(data.description).to.include('kitchen pipe');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Work Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/{{requestId}}/work-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests", "{{requestId}}", "work-summary"]
+            },
+            "description": "Get work summary for a specific request.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has summary fields', function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data;",
+                  "  if (data) {",
+                  "    pm.expect(data).to.have.property('requestId');",
+                  "    pm.expect(data).to.have.property('description');",
+                  "    pm.expect(data).to.have.property('requestTitle');",
+                  "    pm.expect(data).to.have.property('serviceType');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Work Summary (No Summary Yet)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/99999/work-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests", "99999", "work-summary"]
+            },
+            "description": "Test getting work summary for a request that doesn't exist or has no summary.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 or returns null data', function () {",
+                  "  const code = pm.response.code;",
+                  "  if (code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data).to.be.null;",
+                  "  } else {",
+                  "    pm.expect(code).to.be.oneOf([404, 400]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/provider/{{providerId}}/portfolio",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests", "provider", "{{providerId}}", "portfolio"]
+            },
+            "description": "Public endpoint. Returns all completed jobs with work summaries for a provider.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Response has data array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Portfolio items have required fields', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    const item = json.data[0];",
+                  "    pm.expect(item).to.have.property('requestId');",
+                  "    pm.expect(item).to.have.property('requestTitle');",
+                  "    pm.expect(item).to.have.property('description');",
+                  "    pm.expect(item).to.have.property('serviceType');",
+                  "    pm.expect(item).to.have.property('completedAt');",
+                  "  }",
+                  "});",
+                  "pm.test('All items have descriptions (non-null)', function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0) {",
+                  "    json.data.forEach(function(item) {",
+                  "      pm.expect(item.description).to.not.be.null;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Portfolio (Empty)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/provider/99999/portfolio",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests", "provider", "99999", "portfolio"]
+            },
+            "description": "Portfolio for a provider with no completed work. Should return empty array.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{providerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Returns empty array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "  pm.expect(json.data).to.have.lengthOf(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Admin Login & User Management",
+      "item": [
+        {
+          "name": "Login as Seeded Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sany3.com\",\n  \"password\": \"Admin1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Admin login successful', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const data = json.data || json;",
+                  "if (data.accessToken) {",
+                  "  pm.collectionVariables.set('adminAccessToken', data.accessToken);",
+                  "}",
+                  "if (data.user && data.user.id) {",
+                  "  pm.collectionVariables.set('adminUserId', data.user.id.toString());",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create New Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/create-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "create-admin"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Second Admin\",\n  \"email\": \"admin2.{{runId}}@sany3.com\",\n  \"phone\": \"014{{runId}}\",\n  \"password\": \"Admin1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Admin created', function () {",
+                  "  pm.expect(pm.response.json().message).to.include('Admin created');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Admin - Duplicate Email (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/create-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "create-admin"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dup Admin\",\n  \"email\": \"admin@sany3.com\",\n  \"phone\": \"015{{runId}}\",\n  \"password\": \"Admin1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 409 for duplicate', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Admin - Customer Token (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/create-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "create-admin"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hack\",\n  \"email\": \"hack@test.com\",\n  \"phone\": \"016{{runId}}\",\n  \"password\": \"Admin1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 403', function () {",
+                  "  pm.expect(pm.response.code).to.eql(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Promote Customer to Admin",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{customerId}}/make-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{customerId}}", "make-admin"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Admin Role",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{customerId}}/remove-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{customerId}}", "remove-admin"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Admin role removed', function () {",
+                  "  pm.expect(pm.response.json().message).to.include('removed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Admin: Provider Verification",
+      "item": [
+        {
+          "name": "Get Verification Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "stats"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Has count fields', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('pendingCount');",
+                  "  pm.expect(data).to.have.property('approvedCount');",
+                  "  pm.expect(data).to.have.property('rejectedCount');",
+                  "  pm.expect(data).to.have.property('totalCount');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Pending Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/pending?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "pending"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Returns paginated data', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('content');",
+                  "  pm.expect(data).to.have.property('totalElements');",
+                  "});",
+                  "const content = pm.response.json().data.content;",
+                  "if (content.length > 0) {",
+                  "  pm.collectionVariables.set('pendingProfileId', content[0].profileId.toString());",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/{{pendingProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "{{pendingProfileId}}"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Has full details', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('name');",
+                  "  pm.expect(data).to.have.property('email');",
+                  "  pm.expect(data).to.have.property('serviceType');",
+                  "  pm.expect(data).to.have.property('nationalId');",
+                  "  pm.expect(data).to.have.property('documents');",
+                  "  pm.expect(data.verificationStatus).to.eql('PENDING');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve Provider",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/{{pendingProfileId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "{{pendingProfileId}}", "approve"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Provider APPROVED', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.verificationStatus).to.eql('APPROVED');",
+                  "  pm.expect(data.isVerified).to.eql(true);",
+                  "  pm.expect(data.verifiedByAdminName).to.not.be.null;",
+                  "  pm.expect(data.verificationDate).to.not.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve Again - Should Fail",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/{{pendingProfileId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "{{pendingProfileId}}", "approve"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cannot approve twice', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([400, 409, 500]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Provider to Reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/provider",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "provider"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Reject Provider\",\n  \"email\": \"reject.{{runId}}@sany3.test\",\n  \"phone\": \"013{{runId}}\",\n  \"password\": \"{{password}}\",\n  \"serviceType\": \"WATER\",\n  \"nationalId\": \"30{{runId}}5678\",\n  \"hourlyRate\": 200,\n  \"bio\": \"Provider to be rejected in test\",\n  \"address\": \"Cairo\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357,\n  \"hasCriminalRecord\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registered', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const data = json.data || json;",
+                  "if (data.user && data.user.id) {",
+                  "  pm.collectionVariables.set('rejectProviderId', data.user.id.toString());",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find Reject Provider ProfileId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/pending?page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "pending"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "50" }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const content = pm.response.json().data.content;",
+                  "const rejectUserId = pm.collectionVariables.get('rejectProviderId');",
+                  "const found = content.find(p => p.userId.toString() === rejectUserId);",
+                  "if (found) {",
+                  "  pm.collectionVariables.set('rejectProfileId', found.profileId.toString());",
+                  "} else if (content.length > 0) {",
+                  "  pm.collectionVariables.set('rejectProfileId', content[content.length-1].profileId.toString());",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject Provider",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/{{rejectProfileId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "{{rejectProfileId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Documents are blurry and criminal record flag is true. Please re-submit.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Provider REJECTED', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.verificationStatus).to.eql('REJECTED');",
+                  "  pm.expect(data.isVerified).to.eql(false);",
+                  "  pm.expect(data.rejectionReason).to.not.be.null;",
+                  "  pm.expect(data.verifiedByAdminName).to.not.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject - Empty Reason (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/{{rejectProfileId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "{{rejectProfileId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400 for empty reason', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Event Tracking & FCM Tokens",
+      "item": [
+        {
+          "name": "Track APP_OPENED",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"APP_OPENED\",\n  \"sessionId\": \"test-session-001\",\n  \"clientTimezone\": \"Africa/Cairo\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Returns event details', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('eventId');",
+                  "  pm.expect(data.eventType).to.eql('APP_OPENED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Track SERVICE_TYPE_VIEWED",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"SERVICE_TYPE_VIEWED\",\n  \"serviceType\": \"WATER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Track SERVICE_REQUEST_STARTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"SERVICE_REQUEST_STARTED\",\n  \"serviceType\": \"ELECTRICITY\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Track - No Auth (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"APP_OPENED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401/403', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Track - Missing eventType (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceType\": \"WATER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register FCM Token (Android)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/devices/fcm-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devices", "fcm-token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"fake-fcm-token-android-{{runId}}\",\n  \"platform\": \"ANDROID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register FCM Token (iOS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/devices/fcm-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devices", "fcm-token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"fake-fcm-token-ios-{{runId}}\",\n  \"platform\": \"IOS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Token - No Auth (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/devices/fcm-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devices", "fcm-token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"some-token\",\n  \"platform\": \"ANDROID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401/403', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Token - Missing Fields (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/devices/fcm-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devices", "fcm-token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"ANDROID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 - Admin: AI Nudge Job",
+      "item": [
+        {
+          "name": "Run Nudge Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/nudges/first-request/run-now",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "nudges", "first-request", "run-now"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Returns job result', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('eligibleUsers');",
+                  "  pm.expect(data).to.have.property('notificationsSent');",
+                  "  pm.expect(data).to.have.property('notificationsFailed');",
+                  "  pm.expect(data).to.have.property('triggeredAt');",
+                  "});",
+                  "console.log('Nudge result:', JSON.stringify(pm.response.json().data));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Run Nudge - No Auth (401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/nudges/first-request/run-now",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "nudges", "first-request", "run-now"]
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401/403', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Run Nudge - Customer Token (403)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/nudges/first-request/run-now",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "nudges", "first-request", "run-now"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 403', function () {",
+                  "  pm.expect(pm.response.code).to.eql(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Run Nudge Again (anti-spam)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/nudges/first-request/run-now",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "nudges", "first-request", "run-now"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Anti-spam working', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  console.log('Second run:', JSON.stringify(data));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://3-sanay3-production.up.railway.app",
+      "type": "string"
+    },
+    {
+      "key": "serviceType",
+      "value": "CARPENTER",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "TestPass123",
+      "type": "string"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerNationalId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "offerId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "chatRoomId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "messageId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "ratingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scheduleDate",
+      "value": "2026-05-10",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pendingProfileId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rejectProfileId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rejectProviderId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
