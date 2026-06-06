@@ -51,6 +51,10 @@ jwt:
   access-token-expiry: 604800000
   refresh-token-expiry: 604800000
 
+firebase:
+  enabled: ${FIREBASE_ENABLED:true}
+  credentials-file: ${FIREBASE_CREDENTIALS_FILE:sany3-7a1bf-firebase-adminsdk-fbsvc-d078f95c8e.json}
+
 logging:
   level:
     root: WARN
