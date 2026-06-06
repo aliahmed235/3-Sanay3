@@ -194,6 +194,25 @@ public class Constants {
     }
 
     /**
+     * AI Nudge Configuration
+     */
+    public static final class NUDGE {
+        // Notification type identifier
+        public static final String NOTIFICATION_TYPE = "FIRST_REQUEST_NUDGE";
+
+        // Anti-spam: minimum idle time before sending nudge (in minutes)
+        public static final long MIN_IDLE_MINUTES = 60;
+
+        // Anti-spam: maximum age of user activity to consider (in hours)
+        public static final long MAX_AGE_HOURS = 24;
+
+        // Rule names
+        public static final String RULE_NIGHT_URGENCY = "NIGHT_URGENCY";
+        public static final String RULE_SERVICE_INTEREST = "SERVICE_INTEREST";
+        public static final String RULE_GENERIC = "GENERIC";
+    }
+
+    /**
      * Error Codes
      */
     public static final class ERROR_CODE {
@@ -225,6 +244,9 @@ public class Constants {
         public static final String OFFER_SUBMITTED = "Offer submitted successfully";
         public static final String OFFER_ACCEPTED = "Offer accepted successfully";
         public static final String RATING_SUBMITTED = "Rating submitted successfully";
+        public static final String EVENT_TRACKED = "Event tracked successfully";
+        public static final String FCM_TOKEN_REGISTERED = "FCM token registered successfully";
+        public static final String NUDGE_JOB_COMPLETED = "Nudge job completed";
     }
 
     /**
