@@ -5,7 +5,10 @@ import com.sany3.graduation_project.entites.ServiceType;
 import com.sany3.graduation_project.entites.VerificationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -50,6 +53,7 @@ public interface ServiceProviderProfileRepository extends JpaRepository<ServiceP
      * @param pageable Pagination
      * @return Page of pending providers
      */
+    @EntityGraph(attributePaths = {"user", "providerDocuments", "verifiedByAdmin"})
     Page<ServiceProviderProfile> findByVerificationStatus(
             VerificationStatus status,
             Pageable pageable);
@@ -60,4 +64,18 @@ public interface ServiceProviderProfileRepository extends JpaRepository<ServiceP
      * @return Number of verified providers
      */
     Long countByServiceTypeAndIsVerified(ServiceType serviceType, Boolean isVerified);
+
+    /**
+     * Find provider with full details (user, documents, verifiedByAdmin)
+     * Used by admin to review provider details
+     */
+    @EntityGraph(attributePaths = {"user", "providerDocuments", "verifiedByAdmin"})
+    @Query("SELECT sp FROM ServiceProviderProfile sp WHERE sp.id = :profileId")
+    Optional<ServiceProviderProfile> findWithDetailsById(@Param("profileId") Long profileId);
+
+    /**
+     * Count providers by verification status
+     * Used for admin dashboard stats
+     */
+    long countByVerificationStatus(VerificationStatus status);
 }
