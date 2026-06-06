@@ -9,14 +9,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
-/**
- * Firebase configuration - only initializes when firebase.enabled=true
- * Graceful degradation: if credentials file not found, logs warning and skips
- */
 @Configuration
 @ConditionalOnProperty(name = "firebase.enabled", havingValue = "true")
 @Slf4j
@@ -25,24 +23,21 @@ public class FirebaseConfig {
     @Value("${firebase.credentials-file:}")
     private String credentialsFile;
 
+    @Value("${GOOGLE_APPLICATION_CREDENTIALS:}")
+    private String credentialsJson;
+
     @Bean
     public FirebaseApp firebaseApp() {
-        if (credentialsFile == null || credentialsFile.isBlank()) {
-            log.warn("Firebase enabled but no credentials file configured — push notifications disabled");
-            return null;
-        }
-
         try {
-            // Try multiple locations for the credentials file
-            InputStream serviceAccount = findCredentialsFile(credentialsFile);
+            InputStream credentials = resolveCredentials();
 
-            if (serviceAccount == null) {
-                log.warn("Firebase credentials file not found at '{}' — push notifications disabled", credentialsFile);
+            if (credentials == null) {
+                log.warn("No Firebase credentials found — push notifications disabled");
                 return null;
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setCredentials(GoogleCredentials.fromStream(credentials))
                     .build();
 
             FirebaseApp app = FirebaseApp.initializeApp(options);
@@ -55,32 +50,37 @@ public class FirebaseConfig {
         }
     }
 
-    /**
-     * Try to find the credentials file in multiple locations:
-     * 1. Exact path as given
-     * 2. Inside the backend/ subdirectory
-     * 3. On the classpath
-     */
-    private InputStream findCredentialsFile(String path) {
-        // 1. Try exact path
-        File file = new File(path);
-        if (file.exists()) {
-            log.info("Found Firebase credentials at: {}", file.getAbsolutePath());
-            try { return new FileInputStream(file); } catch (Exception e) { /* fall through */ }
+    private InputStream resolveCredentials() {
+        // 1. Try GOOGLE_APPLICATION_CREDENTIALS as raw JSON (Railway env var)
+        if (credentialsJson != null && !credentialsJson.isBlank() && credentialsJson.trim().startsWith("{")) {
+            log.info("Using Firebase credentials from GOOGLE_APPLICATION_CREDENTIALS env var");
+            return new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8));
         }
 
-        // 2. Try backend/ subdirectory (when app starts from parent directory)
-        File backendFile = new File("backend/" + path);
-        if (backendFile.exists()) {
-            log.info("Found Firebase credentials at: {}", backendFile.getAbsolutePath());
-            try { return new FileInputStream(backendFile); } catch (Exception e) { /* fall through */ }
+        // 2. Try credentials-file as file path
+        if (credentialsFile != null && !credentialsFile.isBlank()) {
+            // Try exact path
+            File file = new File(credentialsFile);
+            if (file.exists()) {
+                log.info("Using Firebase credentials from file: {}", file.getAbsolutePath());
+                try { return new FileInputStream(file); } catch (Exception e) { /* fall through */ }
+            }
+
+            // Try backend/ subdirectory
+            File backendFile = new File("backend/" + credentialsFile);
+            if (backendFile.exists()) {
+                log.info("Using Firebase credentials from file: {}", backendFile.getAbsolutePath());
+                try { return new FileInputStream(backendFile); } catch (Exception e) { /* fall through */ }
+            }
         }
 
-        // 3. Try classpath
-        InputStream classpathStream = getClass().getClassLoader().getResourceAsStream(path);
-        if (classpathStream != null) {
-            log.info("Found Firebase credentials on classpath: {}", path);
-            return classpathStream;
+        // 3. Try GOOGLE_APPLICATION_CREDENTIALS as file path
+        if (credentialsJson != null && !credentialsJson.isBlank() && !credentialsJson.trim().startsWith("{")) {
+            File file = new File(credentialsJson);
+            if (file.exists()) {
+                log.info("Using Firebase credentials from GOOGLE_APPLICATION_CREDENTIALS file: {}", file.getAbsolutePath());
+                try { return new FileInputStream(file); } catch (Exception e) { /* fall through */ }
+            }
         }
 
         return null;
