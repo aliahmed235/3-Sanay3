@@ -74,7 +74,16 @@ public class FirebaseConfig {
             }
         }
 
-        // 3. Try GOOGLE_APPLICATION_CREDENTIALS as file path
+        // 3. Try classpath (src/main/resources)
+        if (credentialsFile != null && !credentialsFile.isBlank()) {
+            InputStream classpathStream = getClass().getClassLoader().getResourceAsStream(credentialsFile);
+            if (classpathStream != null) {
+                log.info("Using Firebase credentials from classpath: {}", credentialsFile);
+                return classpathStream;
+            }
+        }
+
+        // 4. Try GOOGLE_APPLICATION_CREDENTIALS as file path
         if (credentialsJson != null && !credentialsJson.isBlank() && !credentialsJson.trim().startsWith("{")) {
             File file = new File(credentialsJson);
             if (file.exists()) {

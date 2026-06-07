@@ -3824,6 +3824,30 @@
           }
         },
         {
+          "name": "Upload / Change Photo",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select an image file (jpg/png)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "photo"]
+            },
+            "description": "Upload a new profile photo or replace existing one. Select a file in the 'photo' field before sending."
+          }
+        },
+        {
           "name": "Remove Photo",
           "request": {
             "method": "DELETE",
