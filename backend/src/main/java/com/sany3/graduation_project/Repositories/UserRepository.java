@@ -21,6 +21,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     /**
+     * Find user by ID with roles loaded (for profile operations)
+     */
+    @EntityGraph(attributePaths = {"userRoles.role", "serviceProviderProfile"})
+    @Query("SELECT u FROM User u WHERE u.id = :userId")
+    Optional<User> findWithRolesById(@Param("userId") Long userId);
+
+    /**
      * Find user by phone
      */
     Optional<User> findByPhone(String phone);
