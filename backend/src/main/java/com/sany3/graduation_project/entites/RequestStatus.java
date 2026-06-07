@@ -31,6 +31,12 @@ public enum RequestStatus {
     ONGOING("Service in progress"),
 
     /**
+     * Provider requested extra days + price update
+     * Customer must approve or reject
+     */
+    EXTENSION_REQUESTED("Extension Requested"),
+
+    /**
      * Service is complete
      * Customer scanned QR code #2
      * Waiting for rating
