@@ -78,12 +78,16 @@ public class PushNotificationService {
                 log.error("FCM send failed for user {} token {}: {}", userId, fcmToken.getId(), e.getMessage());
 
                 // Deactivate invalid tokens
-                if ("UNREGISTERED".equals(e.getMessagingErrorCode().name())
-                        || "INVALID_ARGUMENT".equals(e.getMessagingErrorCode().name())) {
-                    log.info("Deactivating invalid FCM token {} for user {}", fcmToken.getId(), userId);
-                    fcmToken.setActive(false);
-                    fcmTokenRepository.save(fcmToken);
+                if (e.getMessagingErrorCode() != null) {
+                    String errorCode = e.getMessagingErrorCode().name();
+                    if ("UNREGISTERED".equals(errorCode) || "INVALID_ARGUMENT".equals(errorCode)) {
+                        log.info("Deactivating invalid FCM token {} for user {}", fcmToken.getId(), userId);
+                        fcmToken.setActive(false);
+                        fcmTokenRepository.save(fcmToken);
+                    }
                 }
+            } catch (Exception e) {
+                log.error("Unexpected error sending FCM to user {} token {}: {}", userId, fcmToken.getId(), e.getMessage());
             }
         }
 
