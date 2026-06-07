@@ -52,22 +52,23 @@ public class FirstRequestNudgeService {
     @Scheduled(fixedDelay = 3600000) // 1 hour
     public void scheduledNudgeJob() {
         log.info("Scheduled nudge job triggered");
-        runNudgeJob();
+        runNudgeJob(false);
     }
 
     /**
-     * Manual trigger for admin endpoint
+     * Manual trigger for admin endpoint — skips the idle-time check
      */
     public NudgeJobResultResponse triggerNudgeJobManually() {
-        log.info("Manual nudge job triggered by admin");
-        return runNudgeJob();
+        log.info("Manual nudge job triggered by admin (skipping idle check)");
+        return runNudgeJob(true);
     }
 
     /**
      * Core nudge logic
+     * @param skipIdleCheck if true, skips the 60-minute idle requirement (for manual admin trigger)
      */
     @Transactional
-    public NudgeJobResultResponse runNudgeJob() {
+    public NudgeJobResultResponse runNudgeJob(boolean skipIdleCheck) {
         if (!running.compareAndSet(false, true)) {
             log.warn("Nudge job already running — skipping");
             return NudgeJobResultResponse.builder()
@@ -90,7 +91,7 @@ public class FirstRequestNudgeService {
             int failed = 0;
 
             for (Long userId : candidateUserIds) {
-                if (!isEligibleForNudge(userId)) {
+                if (!isEligibleForNudge(userId, skipIdleCheck)) {
                     continue;
                 }
                 eligible++;
@@ -170,38 +171,44 @@ public class FirstRequestNudgeService {
      * Check if user is eligible for a nudge notification.
      * Anti-spam rules:
      * 1. No prior nudge of this type
-     * 2. User has been idle for at least 1 hour
+     * 2. User has been idle for at least 1 hour (skipped for manual trigger)
      * 3. User activity is within 24 hours
      * 4. User has at least one active FCM token
      */
-    private boolean isEligibleForNudge(Long userId) {
-        // 1. Already nudged?
-        if (notificationLogRepository.existsByUserIdAndNotificationType(userId, NOTIFICATION_TYPE)) {
+    private boolean isEligibleForNudge(Long userId, boolean skipIdleCheck) {
+        // 1. Already nudged? (skipped for manual admin trigger to allow repeated testing)
+        if (!skipIdleCheck && notificationLogRepository.existsByUserIdAndNotificationType(userId, NOTIFICATION_TYPE)) {
+            log.debug("User {} already nudged — skipping", userId);
             return false;
         }
 
         // 2. Last activity check
         LocalDateTime lastActivity = eventRepository.findLatestEventTimeByUserId(userId);
         if (lastActivity == null) {
+            log.debug("User {} has no activity — skipping", userId);
             return false;
         }
 
         LocalDateTime now = LocalDateTime.now();
         long minutesSinceActivity = java.time.Duration.between(lastActivity, now).toMinutes();
 
-        // Must be idle for at least 1 hour
-        if (minutesSinceActivity < Constants.NUDGE.MIN_IDLE_MINUTES) {
+        // Must be idle for at least 1 hour (skipped for manual admin trigger)
+        if (!skipIdleCheck && minutesSinceActivity < Constants.NUDGE.MIN_IDLE_MINUTES) {
+            log.debug("User {} active {} min ago (need {} min idle) — skipping",
+                    userId, minutesSinceActivity, Constants.NUDGE.MIN_IDLE_MINUTES);
             return false;
         }
 
         // Must be within 24 hours
         if (minutesSinceActivity > Constants.NUDGE.MAX_AGE_HOURS * 60) {
+            log.debug("User {} last active {} min ago (>24hr) — skipping", userId, minutesSinceActivity);
             return false;
         }
 
         // 3. Has FCM token?
         List<UserFcmToken> tokens = fcmTokenRepository.findByUserIdAndActiveTrue(userId);
         if (tokens.isEmpty()) {
+            log.debug("User {} has no FCM tokens — skipping", userId);
             return false;
         }
 
