@@ -247,6 +247,13 @@ public class Constants {
         public static final String EVENT_TRACKED = "Event tracked successfully";
         public static final String FCM_TOKEN_REGISTERED = "FCM token registered successfully";
         public static final String NUDGE_JOB_COMPLETED = "Nudge job completed";
+        public static final String PROFILE_RETRIEVED = "Profile retrieved successfully";
+        public static final String NAME_UPDATED = "Name updated successfully";
+        public static final String PASSWORD_CHANGED = "Password changed successfully";
+        public static final String PHOTO_UPDATED = "Profile photo updated successfully";
+        public static final String PHOTO_REMOVED = "Profile photo removed successfully";
+        public static final String ADDRESS_UPDATED = "Address updated successfully";
+        public static final String HOURLY_RATE_UPDATED = "Hourly rate updated successfully";
     }
 
     /**

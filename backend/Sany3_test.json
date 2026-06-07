@@ -3674,6 +3674,228 @@
           ]
         }
       ]
+    },
+    {
+      "name": "12 - Forgot Password",
+      "item": [
+        {
+          "name": "Forgot Password - Send Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "auth": {"type": "noauth"}
+          }
+        },
+        {
+          "name": "Verify Reset Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"code\": \"{{resetCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-reset-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-reset-code"]
+            },
+            "description": "Get the code from server logs or email, set {{resetCode}} variable, then run this.",
+            "auth": {"type": "noauth"}
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resetToken\": \"{{resetToken}}\",\n  \"newPassword\": \"NewPass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "auth": {"type": "noauth"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Edit Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{customerAccessToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/name",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "name"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{customerAccessToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"NewPass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "password"]
+            }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{customerAccessToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"123 New Street, Cairo\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/address",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "address"]
+            }
+          }
+        },
+        {
+          "name": "Update Hourly Rate (Provider)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{providerAccessToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hourlyRate\": 75.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/hourly-rate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "hourly-rate"]
+            }
+          }
+        },
+        {
+          "name": "Remove Photo",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "photo"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Request Extension",
+      "item": [
+        {
+          "name": "Request Extension (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{providerAccessToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"additionalDays\": 3,\n  \"updatedPrice\": 500.00,\n  \"reason\": \"Need more time to finish the electrical wiring, additional materials required\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/requests/{{requestId}}/extend",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "requests", "{{requestId}}", "extend"]
+            }
+          }
+        },
+        {
+          "name": "Get Extensions",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/requests/{{requestId}}/extensions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "requests", "{{requestId}}", "extensions"]
+            }
+          }
+        },
+        {
+          "name": "Approve Extension (Customer)",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/requests/{{requestId}}/extend/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "requests", "{{requestId}}", "extend", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Extension (Customer)",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Authorization", "value": "Bearer {{customerAccessToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/requests/{{requestId}}/extend/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "requests", "{{requestId}}", "extend", "reject"]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -3814,6 +4036,16 @@
     },
     {
       "key": "rejectProviderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resetCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resetToken",
       "value": "",
       "type": "string"
     }
