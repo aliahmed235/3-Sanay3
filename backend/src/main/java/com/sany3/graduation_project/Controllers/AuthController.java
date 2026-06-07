@@ -2,10 +2,9 @@ package com.sany3.graduation_project.Controllers;
 
 import com.sany3.graduation_project.Services.AuthService;
 import com.sany3.graduation_project.Services.AuthServiceImpl;
-import com.sany3.graduation_project.dto.request.LoginRequest;
-import com.sany3.graduation_project.dto.request.RefreshTokenRequest;
-import com.sany3.graduation_project.dto.request.RegisterProviderRequest;
-import com.sany3.graduation_project.dto.request.RegisterRequest;
+import com.sany3.graduation_project.Services.PasswordResetService;
+import com.sany3.graduation_project.dto.request.*;
+import com.sany3.graduation_project.dto.response.ApiResponse;
 import com.sany3.graduation_project.dto.response.SuccessResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@Valid @RequestBody RegisterRequest request) {
@@ -69,5 +69,40 @@ public class AuthController {
         log.info("Logout attempt");
         authService.logout(token);
         return ResponseEntity.ok(new SuccessResponse("Logout successful", true));
+    }
+
+    /**
+     * Step 1: Request password reset — sends 6-digit code to email
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        log.info("Password reset requested for: {}", request.getEmail());
+        passwordResetService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(null,
+                "If an account exists with this email, a reset code has been sent."));
+    }
+
+    /**
+     * Step 2: Verify the 6-digit code — returns a one-time reset token
+     */
+    @PostMapping("/verify-reset-code")
+    public ResponseEntity<ApiResponse<String>> verifyResetCode(
+            @Valid @RequestBody VerifyResetCodeRequest request) {
+        log.info("Verify reset code for: {}", request.getEmail());
+        String resetToken = passwordResetService.verifyResetCode(
+                request.getEmail(), request.getCode());
+        return ResponseEntity.ok(ApiResponse.success(resetToken, "Code verified successfully"));
+    }
+
+    /**
+     * Step 3: Reset password using the one-time reset token
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Password reset attempt");
+        passwordResetService.resetPassword(request.getResetToken(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success(null, "Password reset successfully"));
     }
 }
