@@ -3,6 +3,8 @@ package com.sany3.graduation_project.Controllers;
 import com.sany3.graduation_project.Services.RatingService;
 import com.sany3.graduation_project.dto.request.CreateRatingRequest;
 import com.sany3.graduation_project.dto.response.ApiResponse;
+import com.sany3.graduation_project.dto.response.ProviderAnalyticsDashboardResponse;
+import com.sany3.graduation_project.dto.response.ProviderProfileStatsResponse;
 import com.sany3.graduation_project.dto.response.ProviderRatingStats;
 import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.entites.Rating;
@@ -146,6 +148,58 @@ public class RatingController {
                 .build();
 
         return ResponseEntity.ok(stats);
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  PROVIDER PROFILE STATS (Customer-facing)
+    // ══════════════════════════════════════════════════════════
+
+    /**
+     * Get provider profile stats — for CUSTOMERS viewing a provider's profile
+     * GET /api/ratings/provider/{providerId}/profile-stats
+     *
+     * Returns: rating distribution, completion rate, on-time rate
+     */
+    @GetMapping("/provider/{providerId}/profile-stats")
+    public ResponseEntity<ApiResponse<ProviderProfileStatsResponse>> getProviderProfileStats(
+            @PathVariable Long providerId) {
+        log.info("GET /api/ratings/provider/{}/profile-stats", providerId);
+
+        try {
+            ProviderProfileStatsResponse stats = ratingService.getProviderProfileStats(providerId);
+            return ResponseEntity.ok(ApiResponse.success(stats, "Provider profile stats retrieved"));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  PROVIDER ANALYTICS DASHBOARD (Provider-facing, own data only)
+    // ══════════════════════════════════════════════════════════
+
+    /**
+     * Get provider analytics dashboard — for PROVIDERS viewing their OWN dashboard
+     * GET /api/ratings/provider/my-analytics
+     *
+     * Security: uses the authenticated user's ID (provider can only see their own data)
+     *
+     * Returns: everything from profile-stats PLUS detailed breakdowns
+     * (which requests got which ratings, when late, what completed/didn't)
+     */
+    @GetMapping("/provider/my-analytics")
+    public ResponseEntity<ApiResponse<ProviderAnalyticsDashboardResponse>> getProviderAnalyticsDashboard(
+            Authentication authentication) {
+        Long providerId = (Long) authentication.getPrincipal();
+        log.info("GET /api/ratings/provider/my-analytics - Provider: {}", providerId);
+
+        try {
+            ProviderAnalyticsDashboardResponse dashboard = ratingService.getProviderAnalyticsDashboard(providerId);
+            return ResponseEntity.ok(ApiResponse.success(dashboard, "Provider analytics retrieved"));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
     }
 
     /**
