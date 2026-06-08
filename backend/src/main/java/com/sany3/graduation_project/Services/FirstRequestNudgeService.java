@@ -179,8 +179,8 @@ public class FirstRequestNudgeService {
             return false;
         }
 
-        // 2. ML model check (always runs — even manual)
-        if (!mlScoringService.shouldNudge(userId)) {
+        // 2. ML model check (skip for manual trigger — allows testing all scenarios)
+        if (!skipChecks && !mlScoringService.shouldNudge(userId)) {
             log.info("ML model decided not to nudge user {}", userId);
             return false;
         }
