@@ -1,0 +1,34 @@
+{
+  "version": "2.0",
+  "description": "Logistic regression model (synthetic-trained): predicts P(user should be nudged)",
+  "feature_names": [
+    "opened_at_night",
+    "viewed_service_type",
+    "started_form",
+    "app_open_count"
+  ],
+  "coefficients": [
+    0.12564561904539387,
+    -1.0633005836739202,
+    -0.8001153965751316,
+    -2.1133284899824267
+  ],
+  "intercept": -0.6608823821446028,
+  "scaler_mean": [
+    0.345,
+    0.59,
+    0.2816666666666667,
+    2.111666666666667
+  ],
+  "scaler_scale": [
+    0.4753682782853704,
+    0.4918333050943173,
+    0.4498116889939135,
+    1.1221395734142106
+  ],
+  "threshold": 0.5,
+  "label_meaning": {
+    "1": "User should be nudged (did not convert)",
+    "0": "User converted (skip nudging)"
+  }
+}
