@@ -206,9 +206,11 @@ public class Constants {
         // Anti-spam: maximum age of user activity to consider (in hours)
         public static final long MAX_AGE_HOURS = 24;
 
-        // Rule names
+        // Rule names (priority order — first match wins)
         public static final String RULE_NIGHT_URGENCY = "NIGHT_URGENCY";
+        public static final String RULE_ABANDONED_FORM = "ABANDONED_FORM";
         public static final String RULE_SERVICE_INTEREST = "SERVICE_INTEREST";
+        public static final String RULE_REPEAT_VISITOR = "REPEAT_VISITOR";
         public static final String RULE_GENERIC = "GENERIC";
     }
 
