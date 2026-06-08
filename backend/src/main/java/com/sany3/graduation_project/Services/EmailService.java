@@ -21,11 +21,14 @@ public class EmailService {
     @Value("${spring.mail.from:noreply@sany3.com}")
     private String fromEmail;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
     /**
      * Send password reset code to user's email
      */
     public void sendPasswordResetCode(String toEmail, String code) {
-        if (mailSender == null) {
+        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
             log.warn("Mail not configured — reset code for {}: {}", toEmail, code);
             return;
         }
@@ -55,6 +58,6 @@ public class EmailService {
      * Check if email sending is available
      */
     public boolean isMailConfigured() {
-        return mailSender != null;
+        return mailSender != null && mailUsername != null && !mailUsername.isBlank();
     }
 }
