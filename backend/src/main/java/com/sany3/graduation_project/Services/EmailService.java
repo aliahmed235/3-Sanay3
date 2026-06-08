@@ -1,52 +1,68 @@
 package com.sany3.graduation_project.Services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Email service for sending password reset codes.
- * Gracefully degrades when mail is not configured.
+ * Uses Resend API (works on Railway where SMTP is blocked).
+ * Falls back to logging the code when not configured.
  */
 @Service
 @Slf4j
 public class EmailService {
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
 
-    @Value("${spring.mail.from:noreply@sany3.com}")
+    @Value("${resend.from:Sany3 <onboarding@resend.dev>}")
     private String fromEmail;
 
-    @Value("${spring.mail.username:}")
-    private String mailUsername;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
     /**
      * Send password reset code to user's email
      */
     public void sendPasswordResetCode(String toEmail, String code) {
-        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
-            log.warn("Mail not configured — reset code for {}: {}", toEmail, code);
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.warn("Resend not configured — reset code for {}: {}", toEmail, code);
             return;
         }
 
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject("Sany3 - Password Reset Code");
-            message.setText(
-                    "Your password reset code is: " + code + "\n\n" +
-                    "This code expires in 15 minutes.\n\n" +
-                    "If you did not request this, please ignore this email.\n\n" +
-                    "- Sany3 Team"
-            );
+            String jsonBody = """
+                    {
+                      "from": "%s",
+                      "to": ["%s"],
+                      "subject": "Sany3 - Password Reset Code",
+                      "html": "<h2>Password Reset Code</h2><p>Your code is: <strong>%s</strong></p><p>This code expires in 15 minutes.</p><p>If you did not request this, please ignore this email.</p><br><p>— Sany3 Team</p>"
+                    }
+                    """.formatted(fromEmail, toEmail, code);
 
-            mailSender.send(message);
-            log.info("Password reset code sent to {}", toEmail);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .timeout(Duration.ofSeconds(15))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                log.info("Password reset code sent to {} via Resend", toEmail);
+            } else {
+                log.error("Resend API error ({}): {}", response.statusCode(), response.body());
+            }
 
         } catch (Exception e) {
             log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
@@ -58,6 +74,6 @@ public class EmailService {
      * Check if email sending is available
      */
     public boolean isMailConfigured() {
-        return mailSender != null && mailUsername != null && !mailUsername.isBlank();
+        return resendApiKey != null && !resendApiKey.isBlank();
     }
 }
