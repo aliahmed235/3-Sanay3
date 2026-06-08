@@ -40,18 +40,9 @@ spring:
       max-file-size: 5MB
       max-request-size: 12MB
 
-  mail:
-    host: ${MAIL_HOST:smtp-mail.outlook.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-    from: ${MAIL_FROM:noreply@sany3.com}
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from: ${RESEND_FROM:Sany3 <onboarding@resend.dev>}
 
 server:
   port: ${PORT:8080}
