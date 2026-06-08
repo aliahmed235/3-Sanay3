@@ -166,6 +166,26 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("requestStart") LocalDateTime requestStart,
             @Param("requestEnd") LocalDateTime requestEnd);
 
+    // ── Provider Analytics Count Queries ──
+
+    /**
+     * Count all requests assigned to a provider (excludes OPEN — only accepted+)
+     */
+    @Query("SELECT COUNT(sr) FROM ServiceRequest sr WHERE sr.acceptedProvider.id = :providerId")
+    Long countByAcceptedProviderId(@Param("providerId") Long providerId);
+
+    /**
+     * Count completed requests for a provider
+     */
+    @Query("SELECT COUNT(sr) FROM ServiceRequest sr WHERE sr.acceptedProvider.id = :providerId AND sr.status = 'COMPLETED'")
+    Long countCompletedByProviderId(@Param("providerId") Long providerId);
+
+    /**
+     * Count cancelled requests for a provider
+     */
+    @Query("SELECT COUNT(sr) FROM ServiceRequest sr WHERE sr.acceptedProvider.id = :providerId AND sr.status = 'CANCELLED'")
+    Long countCancelledByProviderId(@Param("providerId") Long providerId);
+
     /**
      * Provider portfolio: completed requests that have a work summary
      */
