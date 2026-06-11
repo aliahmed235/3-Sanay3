@@ -56,18 +56,12 @@ public class WalletController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<?>> requestWithdrawal(
+    public ResponseEntity<ApiResponse<PaymentReceiptResponse>> requestWithdrawal(
             @Valid @RequestBody WithdrawRequest request,
             Authentication authentication) {
 
         Long providerId = (Long) authentication.getPrincipal();
-
-        if ("CREDIT_CARD".equalsIgnoreCase(request.getPaymentMethod())) {
-            StripePaymentIntentResponse stripeResponse = walletService.withdrawCreditCard(providerId, request.getAmount());
-            return ResponseEntity.ok(ApiResponse.success(stripeResponse, "Withdrawal processed to your card."));
-        } else {
-            PaymentReceiptResponse receipt = walletService.withdrawCash(providerId, request.getAmount());
-            return ResponseEntity.ok(ApiResponse.success(receipt, "Receipt generated. Collect from any supermarket."));
-        }
+        PaymentReceiptResponse receipt = walletService.withdrawCash(providerId, request.getAmount());
+        return ResponseEntity.ok(ApiResponse.success(receipt, "Receipt generated. Collect from any supermarket."));
     }
 }
