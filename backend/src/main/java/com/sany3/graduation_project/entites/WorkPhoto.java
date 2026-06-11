@@ -35,6 +35,11 @@ public class WorkPhoto {
     @Column(name = "photo_url", nullable = false, length = 500)
     private String photoUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "photo_type", nullable = false)
+    @Builder.Default
+    private PhotoType photoType = PhotoType.AFTER;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
