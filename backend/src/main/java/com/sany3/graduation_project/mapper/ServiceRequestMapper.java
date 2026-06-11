@@ -2,6 +2,7 @@ package com.sany3.graduation_project.mapper;
 
 import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.dto.response.ServiceRequestResponse;
+import com.sany3.graduation_project.entites.PhotoType;
 import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.WorkPhoto;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +32,15 @@ public class ServiceRequestMapper {
             offerCount = (long) request.getOffers().size();
         }
 
-        List<String> workPhotoUrls = Collections.emptyList();
+        List<String> beforePhotos = Collections.emptyList();
+        List<String> afterPhotos = Collections.emptyList();
         if (Hibernate.isInitialized(request.getWorkPhotos()) && request.getWorkPhotos() != null) {
-            workPhotoUrls = request.getWorkPhotos().stream()
+            beforePhotos = request.getWorkPhotos().stream()
+                    .filter(p -> p.getPhotoType() == PhotoType.BEFORE)
+                    .map(WorkPhoto::getPhotoUrl)
+                    .toList();
+            afterPhotos = request.getWorkPhotos().stream()
+                    .filter(p -> p.getPhotoType() == PhotoType.AFTER)
                     .map(WorkPhoto::getPhotoUrl)
                     .toList();
         }
@@ -59,7 +66,8 @@ public class ServiceRequestMapper {
                 .offerCount(offerCount)
                 .rating(ratingResponse)
                 .workSummary(request.getWorkSummary())
-                .workPhotos(workPhotoUrls)
+                .beforePhotos(beforePhotos)
+                .afterPhotos(afterPhotos)
                 .build();
     }
 }
