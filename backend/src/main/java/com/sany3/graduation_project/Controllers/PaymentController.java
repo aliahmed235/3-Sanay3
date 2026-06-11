@@ -22,7 +22,6 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final ObjectMapper objectMapper;
 
     @PostMapping("/cash")
     public ResponseEntity<ApiResponse<PaymentResponse>> payCash(
@@ -54,7 +53,8 @@ public class PaymentController {
         log.info("Stripe webhook received");
 
         try {
-            JsonNode root = objectMapper.readTree(payload);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(payload);
             String type = root.get("type").asText();
 
             if ("payment_intent.succeeded".equals(type)) {
