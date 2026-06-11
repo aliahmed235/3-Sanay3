@@ -215,6 +215,14 @@ public class Constants {
     }
 
     /**
+     * Payment Configuration
+     */
+    public static final class PAYMENT {
+        public static final double PLATFORM_FEE_PERCENTAGE = 15.0;
+        public static final double BAN_THRESHOLD = -1000.0;
+    }
+
+    /**
      * Error Codes
      */
     public static final class ERROR_CODE {
