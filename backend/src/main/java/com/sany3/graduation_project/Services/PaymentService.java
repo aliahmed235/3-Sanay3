@@ -150,12 +150,8 @@ public class PaymentService {
     }
 
     private BigDecimal getRequestAmount(ServiceRequest request) {
-        List<ServiceOffer> acceptedOffers = serviceOfferRepository.findByRequestIdAndStatus(
-                request.getId(), OfferStatus.ACCEPTED);
-        if (acceptedOffers.isEmpty()) {
-            throw new IllegalStateException("Could not determine request amount - no accepted offer found");
-        }
-        return acceptedOffers.get(0).getOfferedPrice();
+        return serviceOfferRepository.findAcceptedOfferPrice(request.getId())
+                .orElseThrow(() -> new IllegalStateException("Could not determine request amount - no accepted offer found"));
     }
 
     private PaymentResponse toResponse(Payment payment) {
