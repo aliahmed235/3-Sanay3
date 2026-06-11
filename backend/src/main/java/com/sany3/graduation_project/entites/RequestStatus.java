@@ -14,6 +14,8 @@ public enum RequestStatus {
      * Customers see: "Waiting for offers..."
      * Providers see: This request on their map
      */
+    SCHEDULED("Scheduled for later"),
+
     OPEN("Open - Waiting for offers"),
 
     /**
