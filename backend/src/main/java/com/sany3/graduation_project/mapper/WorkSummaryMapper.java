@@ -1,6 +1,7 @@
 package com.sany3.graduation_project.mapper;
 
 import com.sany3.graduation_project.dto.response.WorkSummaryResponse;
+import com.sany3.graduation_project.entites.PhotoType;
 import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.WorkPhoto;
 import org.hibernate.Hibernate;
@@ -15,9 +16,16 @@ public class WorkSummaryMapper {
     public WorkSummaryResponse toWorkSummaryResponse(ServiceRequest request) {
         if (request == null) return null;
 
-        List<String> photoUrls = Collections.emptyList();
+        List<String> beforePhotos = Collections.emptyList();
+        List<String> afterPhotos = Collections.emptyList();
+
         if (Hibernate.isInitialized(request.getWorkPhotos()) && request.getWorkPhotos() != null) {
-            photoUrls = request.getWorkPhotos().stream()
+            beforePhotos = request.getWorkPhotos().stream()
+                    .filter(p -> p.getPhotoType() == PhotoType.BEFORE)
+                    .map(WorkPhoto::getPhotoUrl)
+                    .toList();
+            afterPhotos = request.getWorkPhotos().stream()
+                    .filter(p -> p.getPhotoType() == PhotoType.AFTER)
                     .map(WorkPhoto::getPhotoUrl)
                     .toList();
         }
@@ -26,7 +34,8 @@ public class WorkSummaryMapper {
                 .requestId(request.getId())
                 .requestTitle(request.getTitle())
                 .description(request.getWorkSummary())
-                .photos(photoUrls)
+                .beforePhotos(beforePhotos)
+                .afterPhotos(afterPhotos)
                 .customerName(request.getCustomer() != null ? request.getCustomer().getName() : null)
                 .serviceType(request.getServiceType() != null ? request.getServiceType().toString() : null)
                 .completedAt(request.getCompletedAt())
