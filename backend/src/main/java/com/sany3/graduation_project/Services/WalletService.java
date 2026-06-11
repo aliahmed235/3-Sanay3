@@ -161,7 +161,6 @@ public class WalletService {
         log.info("Admin processed payout for provider {}: {}", providerId, amount);
     }
 
-    @Transactional(readOnly = true)
     public WalletResponse getMyWallet(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -172,7 +171,10 @@ public class WalletService {
     @Transactional(readOnly = true)
     public Page<WalletTransactionResponse> getMyTransactions(Long userId, Pageable pageable) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
+                .orElse(null);
+        if (wallet == null) {
+            return Page.empty(pageable);
+        }
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId(), pageable)
                 .map(this::toTransactionResponse);
     }
