@@ -43,4 +43,9 @@ public class ServiceRequestResponse {
     private String workSummary;
     private List<String> beforePhotos;
     private List<String> afterPhotos;
+
+    // Payment info
+    private String paymentStatus; // PENDING, COMPLETED, FAILED, or NOT_PAID
+    private String paymentMethod; // CASH, CREDIT_CARD
+    private BigDecimal paymentAmount;
 }
