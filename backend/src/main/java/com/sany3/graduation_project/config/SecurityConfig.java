@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/ws", "/ws/**", "/ws-no-sockjs", "/ws-no-sockjs/**").permitAll()
+                        .requestMatchers("/api/payments/stripe/webhook").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
