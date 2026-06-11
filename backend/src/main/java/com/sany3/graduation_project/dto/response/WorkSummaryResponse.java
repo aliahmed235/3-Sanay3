@@ -19,7 +19,8 @@ public class WorkSummaryResponse {
     private Long requestId;
     private String requestTitle;
     private String description;
-    private List<String> photos;
+    private List<String> beforePhotos;
+    private List<String> afterPhotos;
     private String customerName;
     private String serviceType;
     private LocalDateTime completedAt;
