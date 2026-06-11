@@ -1,10 +1,9 @@
 package com.sany3.graduation_project.mapper;
 
+import com.sany3.graduation_project.Repositories.PaymentRepository;
 import com.sany3.graduation_project.dto.response.RatingResponse;
 import com.sany3.graduation_project.dto.response.ServiceRequestResponse;
-import com.sany3.graduation_project.entites.PhotoType;
-import com.sany3.graduation_project.entites.ServiceRequest;
-import com.sany3.graduation_project.entites.WorkPhoto;
+import com.sany3.graduation_project.entites.*;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
@@ -18,6 +17,7 @@ public class ServiceRequestMapper {
 
     private final UserMapper userMapper;
     private final RatingMapper ratingMapper;
+    private final PaymentRepository paymentRepository;
 
     public ServiceRequestResponse toServiceRequestResponse(ServiceRequest request) {
         if (request == null) return null;
@@ -45,6 +45,16 @@ public class ServiceRequestMapper {
                     .toList();
         }
 
+        String paymentStatus = "NOT_PAID";
+        String paymentMethod = "NOT_PAID";
+        java.math.BigDecimal paymentAmount = java.math.BigDecimal.ZERO;
+        Payment payment = paymentRepository.findByServiceRequestId(request.getId()).orElse(null);
+        if (payment != null) {
+            paymentStatus = payment.getStatus().name();
+            paymentMethod = payment.getPaymentMethod().name();
+            paymentAmount = payment.getAmount();
+        }
+
         return ServiceRequestResponse.builder()
                 .id(request.getId())
                 .serviceType(request.getServiceType())
@@ -68,6 +78,9 @@ public class ServiceRequestMapper {
                 .workSummary(request.getWorkSummary())
                 .beforePhotos(beforePhotos)
                 .afterPhotos(afterPhotos)
+                .paymentStatus(paymentStatus)
+                .paymentMethod(paymentMethod)
+                .paymentAmount(paymentAmount)
                 .build();
     }
 }
