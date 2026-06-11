@@ -41,5 +41,6 @@ public class ServiceRequestResponse {
     private Long offerCount;  // How many providers offered
     private RatingResponse rating;
     private String workSummary;
-    private List<String> workPhotos;  // Cloudinary URLs
+    private List<String> beforePhotos;
+    private List<String> afterPhotos;
 }
