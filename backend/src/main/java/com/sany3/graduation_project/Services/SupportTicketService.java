@@ -32,6 +32,12 @@ public class SupportTicketService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        String role = user.hasRole("SERVICE_PROVIDER") ? "SERVICE_PROVIDER" : "USER";
+        if (!request.getCategory().isAllowedFor(role)) {
+            throw new IllegalArgumentException("Category '" + request.getCategory().getDisplayName()
+                    + "' is not available for your role");
+        }
+
         ServiceRequest serviceRequest = null;
         if (request.getRequestId() != null) {
             serviceRequest = serviceRequestRepository.findById(request.getRequestId())
