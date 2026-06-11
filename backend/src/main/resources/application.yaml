@@ -59,6 +59,10 @@ firebase:
   enabled: ${FIREBASE_ENABLED:true}
   credentials-file: ${FIREBASE_CREDENTIALS_FILE:sany3-7a1bf-firebase-adminsdk-fbsvc-fbfca38476.json}
 
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
 logging:
   level:
     root: WARN
