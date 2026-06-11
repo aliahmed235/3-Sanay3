@@ -49,6 +49,11 @@ public class ServiceOfferService {
         ServiceRequest serviceRequest = serviceRequestRepository.findById(request.getRequestId())
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
 
+        // Check if provider is banned
+        if (provider.getBanned()) {
+            throw new IllegalStateException("You are banned due to unpaid platform fees. Please pay your outstanding balance to continue sending offers.");
+        }
+
         // Check if provider already offered on this request
         if (serviceOfferRepository.existsByRequestIdAndProviderId(request.getRequestId(), providerId)) {
             throw new IllegalArgumentException("Provider already submitted an offer for this request");
