@@ -1,6 +1,7 @@
 package com.sany3.graduation_project.Controllers;
 
 import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
+import com.sany3.graduation_project.Repositories.UserRepository;
 import com.sany3.graduation_project.Services.SupportTicketService;
 import com.sany3.graduation_project.dto.request.CreateSupportTicketRequest;
 import com.sany3.graduation_project.dto.response.ApiResponse;
@@ -9,6 +10,8 @@ import com.sany3.graduation_project.dto.response.SupportChatStepResponse.Choice;
 import com.sany3.graduation_project.dto.response.SupportTicketResponse;
 import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.SupportCategory;
+import com.sany3.graduation_project.entites.User;
+import com.sany3.graduation_project.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +34,7 @@ public class SupportController {
 
     private final SupportTicketService supportTicketService;
     private final ServiceRequestRepository serviceRequestRepository;
+    private final UserRepository userRepository;
 
     // ══════════════════════════════════════════════════════════
     //  CHAT FLOW ENDPOINTS (step-by-step conversation)
@@ -43,8 +47,14 @@ public class SupportController {
      * Returns: "How can we help you today?" + category buttons
      */
     @GetMapping("/chat/start")
-    public ResponseEntity<ApiResponse<SupportChatStepResponse>> startChat() {
+    public ResponseEntity<ApiResponse<SupportChatStepResponse>> startChat(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String role = user.hasRole("SERVICE_PROVIDER") ? "SERVICE_PROVIDER" : "USER";
+
         List<Choice> categories = Arrays.stream(SupportCategory.values())
+                .filter(c -> c.isAllowedFor(role))
                 .map(c -> Choice.builder()
                         .value(c.name())
                         .label(c.getDisplayName())
