@@ -30,7 +30,7 @@ public class RatingController {
     private final RatingMapper ratingMapper;
 
     /**
-     * Create a new rating for a completed service
+     * Create a new rating for a completed servic
      * POST /api/ratings/request/{requestId}
      */
     @PostMapping("/request/{requestId}")
