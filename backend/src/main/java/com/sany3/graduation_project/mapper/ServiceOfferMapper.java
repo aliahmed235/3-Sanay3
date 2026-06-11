@@ -1,9 +1,11 @@
 package com.sany3.graduation_project.mapper;
 
+import com.sany3.graduation_project.Repositories.PaymentRepository;
 import com.sany3.graduation_project.Repositories.RatingRepository;
 import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.dto.response.ProviderPreviewResponse;
 import com.sany3.graduation_project.dto.response.ServiceOfferResponse;
+import com.sany3.graduation_project.entites.Payment;
 import com.sany3.graduation_project.entites.ServiceOffer;
 import com.sany3.graduation_project.entites.User;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ public class ServiceOfferMapper {
 
     private final RatingRepository ratingRepository;
     private final ServiceOfferRepository serviceOfferRepository;
+    private final PaymentRepository paymentRepository;
 
     public ServiceOfferResponse toServiceOfferResponse(ServiceOffer offer) {
         if (offer == null) return null;
@@ -24,6 +27,16 @@ public class ServiceOfferMapper {
         Long countBefore = serviceOfferRepository.countByRequestIdAndIdLessThan(
                 offer.getRequest().getId(), offer.getId());
         int offerNumber = (int) (countBefore + 1);
+
+        String paymentStatus = "NOT_PAID";
+        String paymentMethod = "NOT_PAID";
+        java.math.BigDecimal paymentAmount = java.math.BigDecimal.ZERO;
+        Payment payment = paymentRepository.findByServiceRequestId(offer.getRequest().getId()).orElse(null);
+        if (payment != null) {
+            paymentStatus = payment.getStatus().name();
+            paymentMethod = payment.getPaymentMethod().name();
+            paymentAmount = payment.getAmount();
+        }
 
         return ServiceOfferResponse.builder()
                 .id(offer.getId())
@@ -36,6 +49,9 @@ public class ServiceOfferMapper {
                 .status(offer.getStatus())
                 .createdAt(offer.getCreatedAt())
                 .respondedAt(offer.getRespondedAt())
+                .paymentStatus(paymentStatus)
+                .paymentMethod(paymentMethod)
+                .paymentAmount(paymentAmount)
                 .build();
     }
 
