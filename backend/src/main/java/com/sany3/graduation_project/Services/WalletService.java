@@ -182,41 +182,6 @@ public class WalletService {
         return generateReceipt("WITHDRAWAL", amount, provider, "Earnings withdrawal");
     }
 
-    public StripePaymentIntentResponse withdrawCreditCard(Long providerId, BigDecimal amount) {
-        User provider = userRepository.findById(providerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
-        Wallet wallet = getOrCreateWallet(provider);
-
-        validateWithdrawal(wallet, amount);
-
-        wallet.setBalance(wallet.getBalance().subtract(amount));
-        walletRepository.save(wallet);
-
-        WalletTransaction transaction = WalletTransaction.builder()
-                .wallet(wallet)
-                .type(TransactionType.PAYOUT)
-                .amount(amount.negate())
-                .description("Withdrawal (credit card)")
-                .build();
-        walletTransactionRepository.save(transaction);
-
-        try {
-            PaymentIntent intent = stripeService.createPaymentIntent(
-                    amount, "egp", "Withdrawal to provider - " + provider.getName());
-
-            log.info("Provider {} withdrawal via Stripe: {}", providerId, amount);
-
-            return StripePaymentIntentResponse.builder()
-                    .clientSecret(intent.getClientSecret())
-                    .paymentIntentId(intent.getId())
-                    .amount(amount)
-                    .currency("egp")
-                    .build();
-        } catch (Exception e) {
-            log.error("Stripe error for withdrawal: {}", e.getMessage());
-            throw new RuntimeException("Withdrawal processing failed: " + e.getMessage());
-        }
-    }
 
     // ── Admin Operations ──
 
