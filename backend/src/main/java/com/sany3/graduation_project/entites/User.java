@@ -55,6 +55,9 @@ public class User {
     @Column(nullable = false)
     private Boolean isActive = true;
 
+    @Column(nullable = false)
+    private Boolean banned = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
