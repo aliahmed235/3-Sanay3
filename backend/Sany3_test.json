@@ -620,6 +620,92 @@
           ]
         },
         {
+          "name": "Create Scheduled Request (Customer - Later)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "serviceType",
+                  "value": "{{serviceType}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Scheduled kitchen repair",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Need help next week with a kitchen repair. Not urgent.",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "Customer test address",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "30.0444",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "31.2357",
+                  "type": "text"
+                },
+                {
+                  "key": "scheduledAt",
+                  "value": "2026-06-20T10:00:00",
+                  "type": "text"
+                }
+              ]
+            },
+            "description": "Same endpoint as 'Create Service Request' but with scheduledAt set to a future date. Request will be created with status SCHEDULED and become OPEN when the date arrives.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test(\"Status is SCHEDULED\", function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  pm.expect(data.status).to.equal('SCHEDULED');",
+                  "  pm.expect(data.scheduledAt).to.not.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get My Requests (Customer)",
           "request": {
             "method": "GET",
@@ -2171,6 +2257,112 @@
                 "exec": [
                   "pm.test(\"Status is not 5xx\", function () {",
                   "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Profile Stats (Customer View)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/{{providerId}}/profile-stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "{{providerId}}",
+                "profile-stats"
+              ]
+            },
+            "description": "Customer-facing provider profile stats: rating distribution (5-star %, 4-star %, etc.), completion rate, on-time rate, reputation label.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test(\"Has rating distribution\", function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  pm.expect(data).to.have.property('ratingDistribution');",
+                  "  pm.expect(data).to.have.property('completionRate');",
+                  "  pm.expect(data).to.have.property('onTimeRate');",
+                  "  pm.expect(data).to.have.property('reputationLabel');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Provider Analytics Dashboard (Provider View)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/provider/my-analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ratings",
+                "provider",
+                "my-analytics"
+              ]
+            },
+            "description": "Provider-facing analytics dashboard: everything from profile-stats PLUS detailed breakdowns — which requests got which ratings, when they were late, what was incomplete.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{providerAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test(\"Has analytics fields\", function () {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  pm.expect(data).to.have.property('ratingDistribution');",
+                  "  pm.expect(data).to.have.property('completionRate');",
+                  "  pm.expect(data).to.have.property('onTimeRate');",
+                  "  pm.expect(data).to.have.property('totalAssignedRequests');",
+                  "  pm.expect(data).to.have.property('recentRatings');",
+                  "  pm.expect(data).to.have.property('lateRequests');",
+                  "  pm.expect(data).to.have.property('incompleteRequests');",
                   "});"
                 ]
               }
@@ -3920,6 +4112,622 @@
           }
         }
       ]
+    },
+    {
+      "name": "15 - Support Chat Flow",
+      "item": [
+        {
+          "name": "Step 1: Start Chat (Get Categories)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/support/chat/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "support", "chat", "start"]
+            },
+            "description": "Bot says: 'How can we help you today?' and shows category buttons. Flutter renders these as tappable choice chips in a chat bubble.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Has chat step with choices', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.step).to.equal('SELECT_CATEGORY');",
+                  "  pm.expect(data.inputType).to.equal('CHOICE');",
+                  "  pm.expect(data.choices).to.be.an('array');",
+                  "  pm.expect(data.choices.length).to.be.above(0);",
+                  "  pm.expect(data.botMessage).to.include('help');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Step 2: Pick Category (Get Requests)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/support/chat/pick-category",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "support", "chat", "pick-category"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"LATE_PROVIDER\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "User tapped 'Late Provider'. Bot responds: 'Which request do you want to report?' and shows the user's recent requests as buttons.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Shows request choices', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.step).to.equal('SELECT_REQUEST');",
+                  "  pm.expect(data.inputType).to.equal('CHOICE');",
+                  "  pm.expect(data.choices).to.be.an('array');",
+                  "  pm.expect(data.botMessage).to.include('request');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Step 3: Pick Request (Get Text Prompt)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/support/chat/pick-request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "support", "chat", "pick-request"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{requestId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "User tapped a request. Bot responds: 'Please describe what happened:' and shows a text input.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Asks for text description', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.step).to.equal('DESCRIBE');",
+                  "  pm.expect(data.inputType).to.equal('TEXT');",
+                  "  pm.expect(data.choices).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Step 4: Submit Description (Ticket Created)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/support/chat/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "support", "chat", "submit"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"LATE_PROVIDER\",\n  \"requestId\": \"{{requestId}}\",\n  \"description\": \"The provider was 30 minutes late and did not communicate at all. I had to wait outside in the heat.\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "User typed their description. Bot creates ticket and responds: 'We will contact you within 24 hours.'",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test('Ticket created with 24h message', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.step).to.equal('DONE');",
+                  "  pm.expect(data.ticketCreated).to.be.true;",
+                  "  pm.expect(data.ticketId).to.be.above(0);",
+                  "  pm.expect(data.botMessage).to.include('24 hours');",
+                  "  if (data.ticketId) pm.collectionVariables.set('ticketId', data.ticketId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Support Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/support/tickets/my?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "support", "tickets", "my"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            },
+            "description": "User checks their submitted tickets and statuses.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: Get All Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/support/tickets?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "support", "tickets"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{adminAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: Resolve Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/admin/support/tickets/{{ticketId}}/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "support", "tickets", "{{ticketId}}", "resolve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNote\": \"We contacted the provider and issued a warning. Apologies for the inconvenience.\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{adminAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Ticket is RESOLVED', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.status).to.equal('RESOLVED');",
+                  "  pm.expect(data.adminNote).to.not.be.null;",
+                  "  pm.expect(data.resolvedAt).to.not.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+    ,
+    {
+      "name": "16 - Payments",
+      "item": [
+        {
+          "name": "Pay with Cash",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/cash",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "cash"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": {{requestId}}\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Customer confirms cash payment after request is completed. Provider's wallet gets -15% platform fee.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test('Cash payment recorded', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.paymentMethod).to.equal('CASH');",
+                  "  pm.expect(data.status).to.equal('COMPLETED');",
+                  "  pm.expect(data.platformFee).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pay with Credit Card (Create Intent)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/stripe/create-intent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "stripe", "create-intent"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": {{requestId}}\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Creates a Stripe PaymentIntent. Returns clientSecret for Flutter to complete payment.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Has clientSecret', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.clientSecret).to.be.a('string');",
+                  "  pm.expect(data.paymentIntentId).to.be.a('string');",
+                  "  pm.expect(data.currency).to.equal('egp');",
+                  "  if (data.paymentIntentId) pm.collectionVariables.set('paymentIntentId', data.paymentIntentId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "17 - Wallet",
+      "item": [
+        {
+          "name": "Get My Wallet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "my"]
+            },
+            "description": "Get wallet balance. Positive = money to withdraw (credit card earnings). Negative = fees owed (cash payments).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Has wallet data', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.balance).to.be.a('number');",
+                  "  pm.expect(data.balanceStatus).to.be.oneOf(['POSITIVE', 'NEGATIVE', 'ZERO']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/my/transactions?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "my", "transactions"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            },
+            "description": "Transaction history: platform fees, earnings, fee payments, payouts.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pay Platform Fee (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/pay-fee",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "pay-fee"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500.00\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Provider pays platform fees to reduce negative balance. If balance was below -1000 and goes above, ban is automatically removed.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Balance updated', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.balance).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request Withdrawal (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "withdraw"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 425.00\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Provider requests withdrawal of positive balance (from credit card earnings).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Balance reduced', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.balance).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: All Provider Wallets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/wallets/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "wallets", "providers"]
+            },
+            "description": "Admin sees all provider wallets with balances and ban status.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{adminAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: Debtors (Negative Balance)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/wallets/providers/debtors",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "wallets", "providers", "debtors"]
+            },
+            "description": "Admin sees providers with negative balance (owe platform fees).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{adminAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: Process Payout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/admin/wallets/providers/{{providerId}}/payout",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "wallets", "providers", "{{providerId}}", "payout"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 425.00,\n  \"note\": \"Transferred via Vodafone Cash\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Admin processes payout to provider (reduces their positive balance).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{adminAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Payout processed', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.balance).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -4070,6 +4878,16 @@
     },
     {
       "key": "resetToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentIntentId",
       "value": "",
       "type": "string"
     }
