@@ -87,6 +87,6 @@ public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long
 
     Long countByRequestIdAndIdLessThan(Long requestId, Long id);
 
-    @Query("SELECT so.offeredPrice FROM ServiceOffer so WHERE so.request.id = :requestId AND so.status = 'ACCEPTED'")
+    @Query("SELECT so.offeredPrice FROM ServiceOffer so WHERE so.request.id = :requestId AND so.status = 'COMPLETED'")
     Optional<java.math.BigDecimal> findAcceptedOfferPrice(@Param("requestId") Long requestId);
 }
