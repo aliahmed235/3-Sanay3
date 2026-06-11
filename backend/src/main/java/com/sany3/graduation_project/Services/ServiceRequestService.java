@@ -49,8 +49,13 @@ public class ServiceRequestService {
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
-        // Calculate expiry: 24 hours from now
-        LocalDateTime expiryAt = LocalDateTime.now().plusHours(Constants.REQUEST.EXPIRY_HOURS);
+        boolean isScheduled = request.getScheduledAt() != null
+                && request.getScheduledAt().isAfter(LocalDateTime.now());
+
+        RequestStatus initialStatus = isScheduled ? RequestStatus.SCHEDULED : RequestStatus.OPEN;
+        LocalDateTime expiryAt = isScheduled
+                ? request.getScheduledAt().plusHours(Constants.REQUEST.EXPIRY_HOURS)
+                : LocalDateTime.now().plusHours(Constants.REQUEST.EXPIRY_HOURS);
 
         ServiceRequest serviceRequest = ServiceRequest.builder()
                 .customer(customer)
@@ -61,7 +66,7 @@ public class ServiceRequestService {
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
-                .status(RequestStatus.OPEN)
+                .status(initialStatus)
                 .expiresAt(expiryAt)
                 .scheduledAt(request.getScheduledAt())
                 .build();
@@ -303,6 +308,27 @@ public class ServiceRequestService {
         }
 
         log.debug("Expired {} requests", expiredRequests.size());
+    }
+
+    /**
+     * Activate scheduled requests whose time has arrived.
+     * Runs every 5 minutes. Flips SCHEDULED → OPEN so providers can see them.
+     */
+    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    public void activateScheduledRequests() {
+        List<ServiceRequest> readyRequests = serviceRequestRepository
+                .findScheduledRequestsReadyToActivate(LocalDateTime.now());
+
+        for (ServiceRequest request : readyRequests) {
+            log.info("Activating scheduled request: {} (scheduled for {})",
+                    request.getId(), request.getScheduledAt());
+            request.setStatus(RequestStatus.OPEN);
+            serviceRequestRepository.save(request);
+        }
+
+        if (!readyRequests.isEmpty()) {
+            log.info("Activated {} scheduled requests", readyRequests.size());
+        }
     }
 
     private ChatRoom findOrCreateChatRoom(User customer, User provider) {
