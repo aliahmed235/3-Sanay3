@@ -166,12 +166,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("requestStart") LocalDateTime requestStart,
             @Param("requestEnd") LocalDateTime requestEnd);
 
-    /**
-     * Find scheduled requests that are ready to go live
-     */
-    @Query("SELECT sr FROM ServiceRequest sr WHERE sr.status = 'SCHEDULED' AND sr.scheduledAt <= :now")
-    List<ServiceRequest> findScheduledRequestsReadyToActivate(@Param("now") LocalDateTime now);
-
     // ── Provider Analytics Count Queries ──
 
     /**
