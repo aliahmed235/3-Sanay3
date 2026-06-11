@@ -34,11 +34,12 @@ public class WorkSummaryController {
     public ResponseEntity<ApiResponse<WorkSummaryResponse>> addWorkSummary(
             @PathVariable Long requestId,
             @RequestParam("description") String description,
-            @RequestPart(value = "photos", required = false) List<MultipartFile> photos,
+            @RequestPart(value = "beforePhotos", required = false) List<MultipartFile> beforePhotos,
+            @RequestPart(value = "afterPhotos", required = false) List<MultipartFile> afterPhotos,
             Authentication authentication) {
 
         Long providerId = (Long) authentication.getPrincipal();
-        var result = workSummaryService.addWorkSummary(requestId, providerId, description, photos);
+        var result = workSummaryService.addWorkSummary(requestId, providerId, description, beforePhotos, afterPhotos);
         var response = workSummaryMapper.toWorkSummaryResponse(result);
 
         return ResponseEntity.status(HttpStatus.CREATED)
