@@ -4,6 +4,7 @@ import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
 import com.sany3.graduation_project.Repositories.WorkPhotoRepository;
 import com.sany3.graduation_project.entites.OfferStatus;
+import com.sany3.graduation_project.entites.PhotoType;
 import com.sany3.graduation_project.entites.ServiceRequest;
 import com.sany3.graduation_project.entites.WorkPhoto;
 import com.sany3.graduation_project.exception.ResourceNotFoundException;
@@ -31,7 +32,9 @@ public class WorkSummaryService {
      * Checks that the offer status is COMPLETED
      */
     public ServiceRequest addWorkSummary(Long requestId, Long providerId,
-                                          String description, List<MultipartFile> photos) {
+                                          String description,
+                                          List<MultipartFile> beforePhotos,
+                                          List<MultipartFile> afterPhotos) {
         log.info("Adding work summary for request: {}", requestId);
 
         ServiceRequest request = serviceRequestRepository.findById(requestId)
@@ -41,28 +44,32 @@ public class WorkSummaryService {
             throw new IllegalArgumentException("Only the accepted provider can add work summary");
         }
 
-        // Check offer status is COMPLETED
         var offer = serviceOfferRepository.findByRequestIdAndStatusOrderByCreatedAtAsc(requestId, OfferStatus.COMPLETED)
                 .orElseThrow(() -> new IllegalStateException("Offer must be COMPLETED to add work summary"));
 
         request.setWorkSummary(description);
         request = serviceRequestRepository.save(request);
 
-        if (photos != null) {
-            for (MultipartFile photo : photos) {
-                if (!photo.isEmpty()) {
-                    String url = cloudinaryStorageService.upload(photo, "work/" + requestId);
-                    WorkPhoto workPhoto = WorkPhoto.builder()
-                            .serviceRequest(request)
-                            .photoUrl(url)
-                            .build();
-                    workPhotoRepository.save(workPhoto);
-                }
-            }
-        }
+        savePhotos(request, beforePhotos, PhotoType.BEFORE);
+        savePhotos(request, afterPhotos, PhotoType.AFTER);
 
         log.info("Work summary added for request: {}", requestId);
-        return request;
+        return serviceRequestRepository.findByIdWithWorkPhotos(requestId).orElse(request);
+    }
+
+    private void savePhotos(ServiceRequest request, List<MultipartFile> photos, PhotoType type) {
+        if (photos == null) return;
+        for (MultipartFile photo : photos) {
+            if (!photo.isEmpty()) {
+                String url = cloudinaryStorageService.upload(photo, "work/" + request.getId());
+                WorkPhoto workPhoto = WorkPhoto.builder()
+                        .serviceRequest(request)
+                        .photoUrl(url)
+                        .photoType(type)
+                        .build();
+                workPhotoRepository.save(workPhoto);
+            }
+        }
     }
 
     /**
@@ -70,7 +77,7 @@ public class WorkSummaryService {
      */
     public ServiceRequest getWorkSummary(Long requestId) {
         log.debug("Fetching work summary for request: {}", requestId);
-        return serviceRequestRepository.findById(requestId)
+        return serviceRequestRepository.findByIdWithWorkPhotos(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
     }
 
