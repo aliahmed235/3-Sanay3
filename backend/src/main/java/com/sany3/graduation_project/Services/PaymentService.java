@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 @Service
 @Transactional
@@ -149,10 +150,12 @@ public class PaymentService {
     }
 
     private BigDecimal getRequestAmount(ServiceRequest request) {
-        return serviceOfferRepository.findByRequestIdAndStatusOrderByCreatedAtAsc(
-                        request.getId(), OfferStatus.ACCEPTED)
-                .map(ServiceOffer::getOfferedPrice)
-                .orElseThrow(() -> new IllegalStateException("Could not determine request amount - no accepted offer found"));
+        List<ServiceOffer> acceptedOffers = serviceOfferRepository.findByRequestIdAndStatus(
+                request.getId(), OfferStatus.ACCEPTED);
+        if (acceptedOffers.isEmpty()) {
+            throw new IllegalStateException("Could not determine request amount - no accepted offer found");
+        }
+        return acceptedOffers.get(0).getOfferedPrice();
     }
 
     private PaymentResponse toResponse(Payment payment) {
