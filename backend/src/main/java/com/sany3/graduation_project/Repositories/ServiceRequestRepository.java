@@ -192,6 +192,10 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     @Query("SELECT COUNT(sr) FROM ServiceRequest sr WHERE sr.acceptedProvider.id = :providerId AND sr.status = 'CANCELLED'")
     Long countCancelledByProviderId(@Param("providerId") Long providerId);
 
+    @EntityGraph(attributePaths = {"customer", "acceptedProvider", "workPhotos"})
+    @Query("SELECT sr FROM ServiceRequest sr WHERE sr.id = :id")
+    java.util.Optional<ServiceRequest> findByIdWithWorkPhotos(@Param("id") Long id);
+
     /**
      * Provider portfolio: completed requests that have a work summary
      */
