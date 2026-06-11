@@ -28,4 +28,9 @@ public class ServiceOfferResponse {
     private OfferStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime respondedAt;
+
+    // Payment info for the request
+    private String paymentStatus; // PENDING, COMPLETED, FAILED, or NOT_PAID
+    private String paymentMethod; // CASH, CREDIT_CARD
+    private BigDecimal paymentAmount;
 }
