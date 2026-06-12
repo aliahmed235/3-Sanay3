@@ -27,4 +27,8 @@ public class PaymentResponse {
     private BigDecimal providerEarning;
     private String status;
     private LocalDateTime createdAt;
+
+    // Stripe fields (only for credit card payments)
+    private String stripeClientSecret;
+    private String stripePaymentIntentId;
 }
