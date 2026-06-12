@@ -1,13 +1,9 @@
 package com.sany3.graduation_project.Services;
 
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
 import com.sany3.graduation_project.Repositories.PaymentRepository;
 import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
-import com.sany3.graduation_project.Repositories.UserRepository;
 import com.sany3.graduation_project.dto.response.PaymentResponse;
-import com.sany3.graduation_project.dto.response.StripePaymentIntentResponse;
 import com.sany3.graduation_project.entites.*;
 import com.sany3.graduation_project.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
 
 @Service
 @Transactional
@@ -30,18 +25,13 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final ServiceOfferRepository serviceOfferRepository;
-    private final UserRepository userRepository;
     private final WalletService walletService;
-    private final StripeService stripeService;
 
     public PaymentResponse processCashPayment(Long customerId, Long requestId) {
         log.info("Processing cash payment: customer {}, request {}", customerId, requestId);
 
         ServiceRequest request = getCompletedRequest(requestId, customerId);
-
-        if (paymentRepository.existsByServiceRequestId(requestId)) {
-            throw new IllegalStateException("Payment already exists for this request");
-        }
+        checkAndCleanPayment(requestId);
 
         BigDecimal amount = getRequestAmount(request);
         BigDecimal platformFee = amount.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
@@ -65,69 +55,39 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    public StripePaymentIntentResponse createStripePaymentIntent(Long customerId, Long requestId) {
-        log.info("Creating Stripe PaymentIntent: customer {}, request {}", customerId, requestId);
+    public PaymentResponse processCardPayment(Long customerId, Long requestId) {
+        log.info("Processing credit card payment: customer {}, request {}", customerId, requestId);
 
         ServiceRequest request = getCompletedRequest(requestId, customerId);
-
-        if (paymentRepository.existsByServiceRequestId(requestId)) {
-            throw new IllegalStateException("Payment already exists for this request");
-        }
+        checkAndCleanPayment(requestId);
 
         BigDecimal amount = getRequestAmount(request);
+        BigDecimal platformFee = amount.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal providerEarning = amount.subtract(platformFee);
 
-        try {
-            PaymentIntent intent = stripeService.createPaymentIntent(
-                    amount, "egp", "Payment for: " + request.getTitle());
+        Payment payment = Payment.builder()
+                .serviceRequest(request)
+                .customer(request.getCustomer())
+                .provider(request.getAcceptedProvider())
+                .amount(amount)
+                .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .platformFee(platformFee)
+                .providerEarning(providerEarning)
+                .status(PaymentStatus.COMPLETED)
+                .build();
+        payment = paymentRepository.save(payment);
 
-            BigDecimal platformFee = amount.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal providerEarning = amount.subtract(platformFee);
+        walletService.processCreditCardPayment(request.getAcceptedProvider(), request, amount);
 
-            Payment payment = Payment.builder()
-                    .serviceRequest(request)
-                    .customer(request.getCustomer())
-                    .provider(request.getAcceptedProvider())
-                    .amount(amount)
-                    .paymentMethod(PaymentMethod.CREDIT_CARD)
-                    .stripePaymentIntentId(intent.getId())
-                    .platformFee(platformFee)
-                    .providerEarning(providerEarning)
-                    .status(PaymentStatus.PENDING)
-                    .build();
-            paymentRepository.save(payment);
-
-            return StripePaymentIntentResponse.builder()
-                    .clientSecret(intent.getClientSecret())
-                    .paymentIntentId(intent.getId())
-                    .amount(amount)
-                    .currency("egp")
-                    .build();
-        } catch (StripeException e) {
-            log.error("Stripe error: {}", e.getMessage());
-            throw new RuntimeException("Payment processing failed: " + e.getMessage());
-        }
+        log.info("Credit card payment completed: payment {}", payment.getId());
+        return toResponse(payment);
     }
 
-    public void handleStripeWebhook(String paymentIntentId) {
-        log.info("Stripe webhook: paymentIntent {}", paymentIntentId);
-
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentIntentId));
-
-        if (payment.getStatus() == PaymentStatus.COMPLETED) {
-            log.info("Payment already completed, skipping");
-            return;
+    private void checkAndCleanPayment(Long requestId) {
+        if (paymentRepository.existsByServiceRequestIdAndStatus(requestId, PaymentStatus.COMPLETED)) {
+            throw new IllegalStateException("Payment already completed for this request");
         }
-
-        payment.setStatus(PaymentStatus.COMPLETED);
-        paymentRepository.save(payment);
-
-        walletService.processCreditCardPayment(
-                payment.getProvider(),
-                payment.getServiceRequest(),
-                payment.getAmount());
-
-        log.info("Stripe payment completed: payment {}", payment.getId());
+        paymentRepository.deleteByServiceRequestIdAndStatusNot(requestId, PaymentStatus.COMPLETED);
     }
 
     private ServiceRequest getCompletedRequest(Long requestId, Long customerId) {
