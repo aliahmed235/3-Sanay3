@@ -82,7 +82,7 @@ public class ServiceRequestService {
      */
     public Page<ServiceRequest> getCustomerRequests(Long customerId, Pageable pageable) {
         log.debug("Fetching requests for customer: {}", customerId);
-        return serviceRequestRepository.findByCustomerId(customerId, pageable);
+        return serviceRequestRepository.findByCustomerIdOrderByIdDesc(customerId, pageable);
     }
 
     /**
