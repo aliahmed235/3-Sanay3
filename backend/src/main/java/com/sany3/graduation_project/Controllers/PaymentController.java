@@ -1,11 +1,8 @@
 package com.sany3.graduation_project.Controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sany3.graduation_project.Services.PaymentService;
 import com.sany3.graduation_project.dto.response.ApiResponse;
 import com.sany3.graduation_project.dto.response.PaymentResponse;
-import com.sany3.graduation_project.dto.response.StripePaymentIntentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -36,39 +33,16 @@ public class PaymentController {
                 .body(ApiResponse.success(response, "Cash payment recorded"));
     }
 
-    @PostMapping("/stripe/create-intent")
-    public ResponseEntity<ApiResponse<StripePaymentIntentResponse>> createStripeIntent(
+    @PostMapping("/credit-card")
+    public ResponseEntity<ApiResponse<PaymentResponse>> payCard(
             @RequestBody Map<String, Long> body,
             Authentication authentication) {
 
         Long customerId = (Long) authentication.getPrincipal();
         Long requestId = body.get("requestId");
 
-        StripePaymentIntentResponse response = paymentService.createStripePaymentIntent(customerId, requestId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Payment intent created"));
-    }
-
-    @PostMapping("/stripe/webhook")
-    public ResponseEntity<String> stripeWebhook(@RequestBody String payload) {
-        log.info("Stripe webhook received");
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(payload);
-            String type = root.get("type").asText();
-
-            if ("payment_intent.succeeded".equals(type)) {
-                String paymentIntentId = root.get("data")
-                        .get("object")
-                        .get("id").asText();
-
-                paymentService.handleStripeWebhook(paymentIntentId);
-            }
-
-            return ResponseEntity.ok("OK");
-        } catch (Exception e) {
-            log.error("Webhook error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Webhook error");
-        }
+        PaymentResponse response = paymentService.processCardPayment(customerId, requestId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Credit card payment completed"));
     }
 }
