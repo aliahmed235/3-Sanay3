@@ -26,7 +26,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
      * Get all requests by a customer
      */
     @EntityGraph(attributePaths = {"customer", "acceptedProvider", "rating"})
-    Page<ServiceRequest> findByCustomerId(Long customerId, Pageable pageable);
+    Page<ServiceRequest> findByCustomerIdOrderByIdDesc(Long customerId, Pageable pageable);
 
     /**
      * Get open requests (available for providers)
