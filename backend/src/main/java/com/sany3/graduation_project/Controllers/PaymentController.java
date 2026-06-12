@@ -42,7 +42,18 @@ public class PaymentController {
         Long requestId = body.get("requestId");
 
         PaymentResponse response = paymentService.processCardPayment(customerId, requestId);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Credit card payment completed"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment intent created. Complete payment in Stripe."));
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<ApiResponse<PaymentResponse>> confirmPayment(
+            @RequestBody Map<String, String> body,
+            Authentication authentication) {
+
+        Long customerId = (Long) authentication.getPrincipal();
+        String paymentIntentId = body.get("paymentIntentId");
+
+        PaymentResponse response = paymentService.confirmCardPayment(customerId, paymentIntentId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment confirmed"));
     }
 }
