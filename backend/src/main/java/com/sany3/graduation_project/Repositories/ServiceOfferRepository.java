@@ -28,7 +28,7 @@ public interface ServiceOfferRepository extends JpaRepository<ServiceOffer, Long
      * Get all offers from a provider (sorted by newest)
      */
     @EntityGraph(attributePaths = {"request", "provider"})
-    Page<ServiceOffer> findByProviderId(Long providerId, Pageable pageable);
+    Page<ServiceOffer> findByProviderIdOrderByRequestIdDesc(Long providerId, Pageable pageable);
 
     /**
      * Get all offers for a request paginated and sorted by newest first
