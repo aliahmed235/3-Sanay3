@@ -137,7 +137,7 @@ public class ServiceOfferService {
      */
     public Page<ServiceOffer> getProviderOffers(Long providerId, Pageable pageable) {
         log.debug("Fetching offers for provider: {}", providerId);
-        return serviceOfferRepository.findByProviderId(providerId, pageable);
+        return serviceOfferRepository.findByProviderIdOrderByRequestIdDesc(providerId, pageable);
     }
 
     /**
@@ -152,7 +152,7 @@ public class ServiceOfferService {
         log.debug("Fetching pending offers for provider: {}", providerId);
 
         // Get all offers from provider
-        Page<ServiceOffer> allOffers = serviceOfferRepository.findByProviderId(providerId, pageable);
+        Page<ServiceOffer> allOffers = serviceOfferRepository.findByProviderIdOrderByRequestIdDesc(providerId, pageable);
 
         // Filter manually since we need Page (not Streamable)
         java.util.List<ServiceOffer> pendingOffers = allOffers.getContent().stream()
