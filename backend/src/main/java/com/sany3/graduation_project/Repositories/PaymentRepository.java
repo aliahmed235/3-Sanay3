@@ -16,4 +16,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByStripePaymentIntentId(String stripePaymentIntentId);
 
     boolean existsByServiceRequestId(Long serviceRequestId);
+
+    boolean existsByServiceRequestIdAndStatus(Long serviceRequestId, com.sany3.graduation_project.entites.PaymentStatus status);
+
+    void deleteByServiceRequestIdAndStatusNot(Long serviceRequestId, com.sany3.graduation_project.entites.PaymentStatus status);
 }
