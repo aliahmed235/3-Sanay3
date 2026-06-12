@@ -125,6 +125,18 @@ public class WalletService {
             PaymentIntent intent = stripeService.createPaymentIntent(
                     amount, "egp", "Platform fee payment - " + provider.getName());
 
+            WalletTransaction transaction = WalletTransaction.builder()
+                    .wallet(wallet)
+                    .type(TransactionType.FEE_PAYMENT)
+                    .amount(amount)
+                    .description("Platform fee payment (credit card) - PENDING")
+                    .stripePaymentIntentId(intent.getId())
+                    .status(PaymentStatus.PENDING)
+                    .build();
+            walletTransactionRepository.save(transaction);
+
+            log.info("Provider {} fee payment PENDING: intent {}", providerId, intent.getId());
+
             return StripePaymentIntentResponse.builder()
                     .clientSecret(intent.getClientSecret())
                     .paymentIntentId(intent.getId())
@@ -137,23 +149,26 @@ public class WalletService {
         }
     }
 
-    public void confirmFeePaymentFromStripe(String paymentIntentId, Long providerId, BigDecimal amount) {
+    public void confirmFeePayment(Long providerId, String paymentIntentId) {
+        WalletTransaction transaction = walletTransactionRepository.findByStripePaymentIntentId(paymentIntentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found for intent: " + paymentIntentId));
+
+        if (transaction.getStatus() == PaymentStatus.COMPLETED) {
+            return;
+        }
+
         User provider = userRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
         Wallet wallet = getOrCreateWallet(provider);
 
-        wallet.setBalance(wallet.getBalance().add(amount));
+        wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
         walletRepository.save(wallet);
 
-        WalletTransaction transaction = WalletTransaction.builder()
-                .wallet(wallet)
-                .type(TransactionType.FEE_PAYMENT)
-                .amount(amount)
-                .description("Platform fee payment (credit card) - " + paymentIntentId)
-                .build();
+        transaction.setStatus(PaymentStatus.COMPLETED);
+        transaction.setDescription("Platform fee payment (credit card)");
         walletTransactionRepository.save(transaction);
 
-        log.info("Provider {} paid fee via Stripe: {}", providerId, amount);
+        log.info("Provider {} fee payment CONFIRMED: {}", providerId, transaction.getAmount());
         checkAndUpdateBanStatus(provider, wallet);
     }
 
