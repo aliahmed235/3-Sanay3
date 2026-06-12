@@ -89,7 +89,7 @@ public class SupportController {
         log.info("Support chat: user {} picked category {}", userId, category);
 
         List<ServiceRequest> userRequests = serviceRequestRepository
-                .findByCustomerId(userId, PageRequest.of(0, 10))
+                .findByCustomerIdOrderByIdDesc(userId, PageRequest.of(0, 10))
                 .getContent();
 
         List<Choice> choices = userRequests.stream()
