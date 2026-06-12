@@ -67,37 +67,58 @@ public class PaymentService {
         BigDecimal platformFee = amount.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal providerEarning = amount.subtract(platformFee);
 
-        String clientSecret = null;
-        String paymentIntentId = null;
         try {
             PaymentIntent intent = stripeService.createPaymentIntent(
                     amount, "egp", "Payment for: " + request.getTitle());
-            clientSecret = intent.getClientSecret();
-            paymentIntentId = intent.getId();
+
+            Payment payment = Payment.builder()
+                    .serviceRequest(request)
+                    .customer(request.getCustomer())
+                    .provider(request.getAcceptedProvider())
+                    .amount(amount)
+                    .paymentMethod(PaymentMethod.CREDIT_CARD)
+                    .stripePaymentIntentId(intent.getId())
+                    .platformFee(platformFee)
+                    .providerEarning(providerEarning)
+                    .status(PaymentStatus.PENDING)
+                    .build();
+            payment = paymentRepository.save(payment);
+
+            log.info("Credit card payment PENDING: payment {}, intent {}", payment.getId(), intent.getId());
+            PaymentResponse response = toResponse(payment);
+            response.setStripeClientSecret(intent.getClientSecret());
+            response.setStripePaymentIntentId(intent.getId());
+            return response;
         } catch (Exception e) {
-            log.warn("Stripe intent creation failed (wallet still updated): {}", e.getMessage());
+            log.error("Stripe error: {}", e.getMessage());
+            throw new RuntimeException("Payment processing failed: " + e.getMessage());
+        }
+    }
+
+    public PaymentResponse confirmCardPayment(Long customerId, String paymentIntentId) {
+        log.info("Confirming credit card payment: intent {}", paymentIntentId);
+
+        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentIntentId));
+
+        if (!payment.getCustomer().getId().equals(customerId)) {
+            throw new IllegalArgumentException("You can only confirm your own payments");
         }
 
-        Payment payment = Payment.builder()
-                .serviceRequest(request)
-                .customer(request.getCustomer())
-                .provider(request.getAcceptedProvider())
-                .amount(amount)
-                .paymentMethod(PaymentMethod.CREDIT_CARD)
-                .stripePaymentIntentId(paymentIntentId)
-                .platformFee(platformFee)
-                .providerEarning(providerEarning)
-                .status(PaymentStatus.COMPLETED)
-                .build();
-        payment = paymentRepository.save(payment);
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            return toResponse(payment);
+        }
 
-        walletService.processCreditCardPayment(request.getAcceptedProvider(), request, amount);
+        payment.setStatus(PaymentStatus.COMPLETED);
+        paymentRepository.save(payment);
 
-        log.info("Credit card payment completed: payment {}", payment.getId());
-        PaymentResponse response = toResponse(payment);
-        response.setStripeClientSecret(clientSecret);
-        response.setStripePaymentIntentId(paymentIntentId);
-        return response;
+        walletService.processCreditCardPayment(
+                payment.getProvider(),
+                payment.getServiceRequest(),
+                payment.getAmount());
+
+        log.info("Credit card payment COMPLETED: payment {}", payment.getId());
+        return toResponse(payment);
     }
 
     private void checkAndCleanPayment(Long requestId) {
