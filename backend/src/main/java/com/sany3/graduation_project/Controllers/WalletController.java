@@ -55,6 +55,18 @@ public class WalletController {
         }
     }
 
+    @PostMapping("/confirm-payment")
+    public ResponseEntity<ApiResponse<String>> confirmFeePayment(
+            @RequestBody java.util.Map<String, String> body,
+            Authentication authentication) {
+
+        Long providerId = (Long) authentication.getPrincipal();
+        String paymentIntentId = body.get("paymentIntentId");
+
+        walletService.confirmFeePayment(providerId, paymentIntentId);
+        return ResponseEntity.ok(ApiResponse.success("confirmed", "Payment confirmed. Wallet updated."));
+    }
+
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<PaymentReceiptResponse>> requestWithdrawal(
             @Valid @RequestBody WithdrawRequest request,
