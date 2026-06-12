@@ -43,6 +43,14 @@ public class WalletTransaction {
     @JoinColumn(name = "service_request_id")
     private ServiceRequest serviceRequest;
 
+    @Column(length = 255)
+    private String stripePaymentIntentId;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentStatus status = PaymentStatus.COMPLETED;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
