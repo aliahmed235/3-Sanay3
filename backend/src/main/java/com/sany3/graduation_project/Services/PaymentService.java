@@ -1,5 +1,6 @@
 package com.sany3.graduation_project.Services;
 
+import com.stripe.model.PaymentIntent;
 import com.sany3.graduation_project.Repositories.PaymentRepository;
 import com.sany3.graduation_project.Repositories.ServiceOfferRepository;
 import com.sany3.graduation_project.Repositories.ServiceRequestRepository;
@@ -26,6 +27,7 @@ public class PaymentService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final ServiceOfferRepository serviceOfferRepository;
     private final WalletService walletService;
+    private final StripeService stripeService;
 
     public PaymentResponse processCashPayment(Long customerId, Long requestId) {
         log.info("Processing cash payment: customer {}, request {}", customerId, requestId);
@@ -65,12 +67,24 @@ public class PaymentService {
         BigDecimal platformFee = amount.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal providerEarning = amount.subtract(platformFee);
 
+        String clientSecret = null;
+        String paymentIntentId = null;
+        try {
+            PaymentIntent intent = stripeService.createPaymentIntent(
+                    amount, "egp", "Payment for: " + request.getTitle());
+            clientSecret = intent.getClientSecret();
+            paymentIntentId = intent.getId();
+        } catch (Exception e) {
+            log.warn("Stripe intent creation failed (wallet still updated): {}", e.getMessage());
+        }
+
         Payment payment = Payment.builder()
                 .serviceRequest(request)
                 .customer(request.getCustomer())
                 .provider(request.getAcceptedProvider())
                 .amount(amount)
                 .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .stripePaymentIntentId(paymentIntentId)
                 .platformFee(platformFee)
                 .providerEarning(providerEarning)
                 .status(PaymentStatus.COMPLETED)
@@ -80,7 +94,10 @@ public class PaymentService {
         walletService.processCreditCardPayment(request.getAcceptedProvider(), request, amount);
 
         log.info("Credit card payment completed: payment {}", payment.getId());
-        return toResponse(payment);
+        PaymentResponse response = toResponse(payment);
+        response.setStripeClientSecret(clientSecret);
+        response.setStripePaymentIntentId(paymentIntentId);
+        return response;
     }
 
     private void checkAndCleanPayment(Long requestId) {
