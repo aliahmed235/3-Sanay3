@@ -49,7 +49,7 @@ public class SupportController {
     @GetMapping("/chat/start")
     public ResponseEntity<ApiResponse<SupportChatStepResponse>> startChat(Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        User user = userRepository.findById(userId)
+        User user = userRepository.findWithRolesById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         String role = user.hasRole("SERVICE_PROVIDER") ? "SERVICE_PROVIDER" : "USER";
 
