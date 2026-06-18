@@ -65,8 +65,6 @@ public class User {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    // Relationships
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserRole> userRoles = new HashSet<>();
 
@@ -76,7 +74,6 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private ServiceProviderProfile serviceProviderProfile;
 
-    // Helper methods
     public boolean hasRole(String roleName) {
         return userRoles.stream()
                 .anyMatch(ur -> ur.getRole().getName().toString().equals(roleName));
