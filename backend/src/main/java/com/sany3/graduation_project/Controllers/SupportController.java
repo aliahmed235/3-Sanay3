@@ -88,9 +88,18 @@ public class SupportController {
         String category = body.get("category");
         log.info("Support chat: user {} picked category {}", userId, category);
 
-        List<ServiceRequest> userRequests = serviceRequestRepository
-                .findByCustomerIdOrderByIdDesc(userId, PageRequest.of(0, 10))
-                .getContent();
+        User user = userRepository.findWithRolesById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isProvider = user.hasRole("SERVICE_PROVIDER");
+
+        List<ServiceRequest> userRequests;
+        if (isProvider) {
+            userRequests = serviceRequestRepository.findByAcceptedProviderId(userId);
+        } else {
+            userRequests = serviceRequestRepository
+                    .findByCustomerIdOrderByIdDesc(userId, PageRequest.of(0, 10))
+                    .getContent();
+        }
 
         List<Choice> choices = userRequests.stream()
                 .map(r -> Choice.builder()
