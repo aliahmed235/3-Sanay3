@@ -1,4 +1,4 @@
--- Wallets: one per user
+
 CREATE TABLE wallets (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
@@ -7,7 +7,6 @@ CREATE TABLE wallets (
     CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Wallet transactions: history log
 CREATE TABLE wallet_transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     wallet_id BIGINT NOT NULL,
@@ -22,7 +21,6 @@ CREATE TABLE wallet_transactions (
     INDEX idx_transaction_created_at (created_at)
 );
 
--- Payments: one per completed request
 CREATE TABLE payments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     service_request_id BIGINT NOT NULL,
@@ -44,5 +42,4 @@ CREATE TABLE payments (
     INDEX idx_payment_status (status)
 );
 
--- Add banned column to users
 ALTER TABLE users ADD COLUMN banned BOOLEAN NOT NULL DEFAULT FALSE;
