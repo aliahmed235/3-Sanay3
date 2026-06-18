@@ -45,9 +45,6 @@ public class WalletService {
                     return walletRepository.save(wallet);
                 });
     }
-
-    // ── Customer Payment Effects on Provider Wallet ──
-
     public void processCashPayment(User provider, ServiceRequest request, BigDecimal amount) {
         Wallet wallet = getOrCreateWallet(provider);
 
@@ -87,9 +84,6 @@ public class WalletService {
         log.info("Credit card payment: provider {} earned {} for request {}", provider.getId(), earning, request.getId());
         checkAndUpdateBanStatus(provider, wallet);
     }
-
-    // ── Provider Pays Platform Fee ──
-
     public PaymentReceiptResponse payPlatformFeeCash(Long providerId, BigDecimal amount) {
         User provider = userRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
