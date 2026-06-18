@@ -1,9 +1,3 @@
--- V1__Create_Users_And_ServiceProviders.sql
--- Create all base tables
-
--- ========================================
--- Roles Table
--- ========================================
 CREATE TABLE roles (
                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
                        name VARCHAR(50) NOT NULL UNIQUE,
@@ -11,9 +5,6 @@ CREATE TABLE roles (
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
--- ========================================
--- Users Table
--- ========================================
 CREATE TABLE users (
                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
                        name VARCHAR(100) NOT NULL,
@@ -29,9 +20,6 @@ CREATE TABLE users (
                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
 );
 
--- ========================================
--- User Roles Table
--- ========================================
 CREATE TABLE user_roles (
                             id BIGINT PRIMARY KEY AUTO_INCREMENT,
                             user_id BIGINT NOT NULL,
@@ -41,10 +29,6 @@ CREATE TABLE user_roles (
                             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                             FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 );
-
--- ========================================
--- Customer Profiles Table
--- ========================================
 CREATE TABLE customer_profiles (
                                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                    user_id BIGINT NOT NULL UNIQUE,
@@ -56,10 +40,6 @@ CREATE TABLE customer_profiles (
 
                                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- ========================================
--- Service Provider Profiles Table
--- ========================================
 CREATE TABLE service_provider_profiles (
                                            id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                            user_id BIGINT NOT NULL UNIQUE,
@@ -80,10 +60,6 @@ CREATE TABLE service_provider_profiles (
                                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                                            FOREIGN KEY (verified_by_admin_id) REFERENCES users(id) ON DELETE SET NULL
 );
-
--- ========================================
--- Provider Documents Table
--- ========================================
 CREATE TABLE provider_documents (
                                     id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                     service_provider_id BIGINT NOT NULL,
@@ -96,10 +72,6 @@ CREATE TABLE provider_documents (
 
                                     FOREIGN KEY (service_provider_id) REFERENCES service_provider_profiles(id) ON DELETE CASCADE
 );
-
--- ========================================
--- Service Requests Table
--- ========================================
 CREATE TABLE service_requests (
                                   id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                   customer_id BIGINT NOT NULL,
@@ -121,10 +93,6 @@ CREATE TABLE service_requests (
                                   FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE RESTRICT,
                                   FOREIGN KEY (accepted_provider_id) REFERENCES users(id) ON DELETE SET NULL
 );
-
--- ========================================
--- Service Offers Table
--- ========================================
 CREATE TABLE service_offers (
                                 id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                 request_id BIGINT NOT NULL,
@@ -140,10 +108,6 @@ CREATE TABLE service_offers (
                                 FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
                                 FOREIGN KEY (provider_id) REFERENCES users(id) ON DELETE RESTRICT
 );
-
--- ========================================
--- Chat Rooms Table
--- ========================================
 CREATE TABLE chat_rooms (
                             id BIGINT PRIMARY KEY AUTO_INCREMENT,
                             request_id BIGINT NOT NULL UNIQUE,
@@ -156,10 +120,6 @@ CREATE TABLE chat_rooms (
                             FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE RESTRICT,
                             FOREIGN KEY (provider_id) REFERENCES users(id) ON DELETE RESTRICT
 );
-
--- ========================================
--- Chat Messages Table
--- ========================================
 CREATE TABLE chat_messages (
                                id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                chat_room_id BIGINT NOT NULL,
@@ -173,10 +133,6 @@ CREATE TABLE chat_messages (
                                FOREIGN KEY (chat_room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
                                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE RESTRICT
 );
-
--- ========================================
--- Ratings Table
--- ========================================
 CREATE TABLE ratings (
                          id BIGINT PRIMARY KEY AUTO_INCREMENT,
                          request_id BIGINT NOT NULL UNIQUE,
