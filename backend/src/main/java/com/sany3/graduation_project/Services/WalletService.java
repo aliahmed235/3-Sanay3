@@ -197,6 +197,74 @@ public class WalletService {
         return generateReceipt("WITHDRAWAL", amount, provider, "Earnings withdrawal");
     }
 
+    // Step 1: create a Stripe (test-mode) intent for the withdrawal. Balance is NOT
+    // touched yet — it is only deducted once the app calls confirmWithdrawal.
+    public StripePaymentIntentResponse withdrawStripe(Long providerId, BigDecimal amount) {
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+        Wallet wallet = getOrCreateWallet(provider);
+
+        validateWithdrawal(wallet, amount);
+
+        try {
+            PaymentIntent intent = stripeService.createPaymentIntent(
+                    amount, "egp", "Wallet withdrawal - " + provider.getName());
+
+            WalletTransaction transaction = WalletTransaction.builder()
+                    .wallet(wallet)
+                    .type(TransactionType.PAYOUT)
+                    .amount(amount.negate())
+                    .description("Withdrawal (Stripe) - PENDING")
+                    .stripePaymentIntentId(intent.getId())
+                    .status(PaymentStatus.PENDING)
+                    .build();
+            walletTransactionRepository.save(transaction);
+
+            log.info("Provider {} withdrawal PENDING via Stripe: intent {}", providerId, intent.getId());
+
+            return StripePaymentIntentResponse.builder()
+                    .clientSecret(intent.getClientSecret())
+                    .paymentIntentId(intent.getId())
+                    .amount(amount)
+                    .currency("egp")
+                    .build();
+        } catch (Exception e) {
+            log.error("Stripe error for withdrawal: {}", e.getMessage());
+            throw new RuntimeException("Withdrawal processing failed: " + e.getMessage());
+        }
+    }
+
+    // Step 2: confirm the Stripe withdrawal -> deduct the balance.
+    public PaymentReceiptResponse confirmWithdrawal(Long providerId, String paymentIntentId) {
+        WalletTransaction transaction = walletTransactionRepository.findByStripePaymentIntentId(paymentIntentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found for intent: " + paymentIntentId));
+
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+        Wallet wallet = getOrCreateWallet(provider);
+
+        BigDecimal amount = transaction.getAmount().abs();
+
+        if (transaction.getStatus() == PaymentStatus.COMPLETED) {
+            // Idempotent: balance already deducted, just return the receipt.
+            return generateReceipt("WITHDRAWAL", amount, provider, "Earnings withdrawal via Stripe");
+        }
+
+        // Re-check funds at confirm time so two pending intents can't overdraw the wallet.
+        validateWithdrawal(wallet, amount);
+
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+
+        transaction.setStatus(PaymentStatus.COMPLETED);
+        transaction.setDescription("Withdrawal (Stripe)");
+        walletTransactionRepository.save(transaction);
+
+        log.info("Provider {} withdrawal CONFIRMED via Stripe: {}", providerId, amount);
+
+        return generateReceipt("WITHDRAWAL", amount, provider, "Earnings withdrawal via Stripe");
+    }
+
 
     // ── Admin Operations ──
 
