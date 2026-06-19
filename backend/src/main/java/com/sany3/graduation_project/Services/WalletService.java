@@ -155,7 +155,13 @@ public class WalletService {
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
         Wallet wallet = getOrCreateWallet(provider);
 
-        wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
+        // Cap the credit at zero so a fee payment can never overshoot the debt
+        // and flip the wallet positive (e.g. two PENDING intents for the same debt).
+        BigDecimal newBalance = wallet.getBalance().add(transaction.getAmount());
+        if (newBalance.compareTo(BigDecimal.ZERO) > 0) {
+            newBalance = BigDecimal.ZERO;
+        }
+        wallet.setBalance(newBalance);
         walletRepository.save(wallet);
 
         transaction.setStatus(PaymentStatus.COMPLETED);
