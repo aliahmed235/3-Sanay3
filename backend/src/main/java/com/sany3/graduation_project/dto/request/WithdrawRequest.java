@@ -16,4 +16,10 @@ public class WithdrawRequest {
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be positive")
     private BigDecimal amount;
+
+    /**
+     * CASH (collect from supermarket) or CREDIT_CARD (2-step Stripe flow, test mode).
+     * Optional — defaults to CASH when omitted for backward compatibility.
+     */
+    private String paymentMethod;
 }
