@@ -68,12 +68,31 @@ public class WalletController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<PaymentReceiptResponse>> requestWithdrawal(
+    public ResponseEntity<ApiResponse<?>> requestWithdrawal(
             @Valid @RequestBody WithdrawRequest request,
             Authentication authentication) {
 
         Long providerId = (Long) authentication.getPrincipal();
-        PaymentReceiptResponse receipt = walletService.withdrawCash(providerId, request.getAmount());
-        return ResponseEntity.ok(ApiResponse.success(receipt, "Receipt generated. Collect from any supermarket."));
+        String method = request.getPaymentMethod();
+
+        if ("CREDIT_CARD".equalsIgnoreCase(method)) {
+            StripePaymentIntentResponse stripeResponse = walletService.withdrawStripe(providerId, request.getAmount());
+            return ResponseEntity.ok(ApiResponse.success(stripeResponse, "Payment intent created. Complete withdrawal in app."));
+        } else {
+            PaymentReceiptResponse receipt = walletService.withdrawCash(providerId, request.getAmount());
+            return ResponseEntity.ok(ApiResponse.success(receipt, "Receipt generated. Collect from any supermarket."));
+        }
+    }
+
+    @PostMapping("/withdraw/confirm")
+    public ResponseEntity<ApiResponse<PaymentReceiptResponse>> confirmWithdrawal(
+            @RequestBody java.util.Map<String, String> body,
+            Authentication authentication) {
+
+        Long providerId = (Long) authentication.getPrincipal();
+        String paymentIntentId = body.get("paymentIntentId");
+
+        PaymentReceiptResponse receipt = walletService.confirmWithdrawal(providerId, paymentIntentId);
+        return ResponseEntity.ok(ApiResponse.success(receipt, "Withdrawal confirmed via Stripe."));
     }
 }
