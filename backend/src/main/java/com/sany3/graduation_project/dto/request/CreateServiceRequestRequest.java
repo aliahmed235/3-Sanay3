@@ -19,11 +19,11 @@ public class CreateServiceRequestRequest {
     private ServiceType serviceType;
 
     @NotBlank(message = "Title is required")
-    @Size(min = 5, max = 255, message = "Title must be 5-255 characters")
+//    @Size(min = 5, max = 255, message = "Title must be 5-255 characters")
     private String title;
 
     @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 1000, message = "Description must be 10-1000 characters")
+//    @Size(min = 10, max = 1000, message = "Description must be 10-1000 characters")
     private String description;
 
     @NotBlank(message = "Address is required")
