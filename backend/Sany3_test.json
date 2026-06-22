@@ -564,13 +564,7 @@
           "name": "Create Service Request (Customer)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/requests",
               "host": [
@@ -581,13 +575,46 @@
               ]
             },
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"serviceType\": \"{{serviceType}}\",\n  \"title\": \"Kitchen repair request\",\n  \"description\": \"Need help with a kitchen repair for API testing.\",\n  \"address\": \"Customer test address\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "serviceType",
+                  "value": "{{serviceType}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Kitchen repair request",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Need help with a kitchen repair for API testing.",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "Customer test address",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "30.0444",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "31.2357",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true,
+                  "description": "Optional photo of the problem"
                 }
-              }
+              ]
             },
             "auth": {
               "type": "bearer",
@@ -2636,18 +2663,32 @@
                   "type": "text"
                 },
                 {
-                  "key": "photos",
+                  "key": "beforePhotos",
                   "type": "file",
                   "src": "",
                   "disabled": true,
-                  "description": "Enable and select files to upload work photos"
+                  "description": "Photo of the problem before fixing"
                 },
                 {
-                  "key": "photos",
+                  "key": "beforePhotos",
                   "type": "file",
                   "src": "",
                   "disabled": true,
-                  "description": "Second photo (optional)"
+                  "description": "Second before photo (optional)"
+                },
+                {
+                  "key": "afterPhotos",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true,
+                  "description": "Photo after the work is done"
+                },
+                {
+                  "key": "afterPhotos",
+                  "type": "file",
+                  "src": "",
+                  "disabled": true,
+                  "description": "Second after photo (optional)"
                 }
               ]
             },
@@ -4440,16 +4481,16 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "url": {
-              "raw": "{{baseUrl}}/api/payments/stripe/create-intent",
+              "raw": "{{baseUrl}}/api/payments/credit-card",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "payments", "stripe", "create-intent"]
+              "path": ["api", "payments", "credit-card"]
             },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"requestId\": {{requestId}}\n}",
               "options": {"raw": {"language": "json"}}
             },
-            "description": "Creates a Stripe PaymentIntent. Returns clientSecret for Flutter to complete payment.",
+            "description": "Creates a PENDING payment + Stripe PaymentIntent. Returns stripeClientSecret for Flutter. Call /confirm after Stripe payment succeeds.",
             "auth": {
               "type": "bearer",
               "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
@@ -4464,12 +4505,51 @@
                   "pm.test('Status is 200', function () {",
                   "  pm.expect(pm.response.code).to.equal(200);",
                   "});",
-                  "pm.test('Has clientSecret', function () {",
+                  "pm.test('Has stripeClientSecret', function () {",
                   "  const data = pm.response.json().data;",
-                  "  pm.expect(data.clientSecret).to.be.a('string');",
-                  "  pm.expect(data.paymentIntentId).to.be.a('string');",
-                  "  pm.expect(data.currency).to.equal('egp');",
-                  "  if (data.paymentIntentId) pm.collectionVariables.set('paymentIntentId', data.paymentIntentId);",
+                  "  pm.expect(data.stripeClientSecret).to.be.a('string');",
+                  "  pm.expect(data.stripePaymentIntentId).to.be.a('string');",
+                  "  pm.expect(data.status).to.equal('PENDING');",
+                  "  if (data.stripePaymentIntentId) pm.collectionVariables.set('paymentIntentId', data.stripePaymentIntentId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm Credit Card Payment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "confirm"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentIntentId\": \"{{paymentIntentId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Flutter calls this AFTER Stripe payment sheet succeeds. Marks payment COMPLETED and updates provider wallet.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{customerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Payment confirmed', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.status).to.equal('COMPLETED');",
                   "});"
                 ]
               }
@@ -4551,7 +4631,7 @@
           ]
         },
         {
-          "name": "Pay Platform Fee (Provider)",
+          "name": "Pay Platform Fee - Cash (Provider)",
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
@@ -4562,10 +4642,45 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 500.00\n}",
+              "raw": "{\n  \"amount\": 50.00,\n  \"paymentMethod\": \"CASH\"\n}",
               "options": {"raw": {"language": "json"}}
             },
-            "description": "Provider pays platform fees to reduce negative balance. If balance was below -1000 and goes above, ban is automatically removed.",
+            "description": "Provider pays fees with cash. Wallet updated immediately. Returns receipt for supermarket payment.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pay Platform Fee - Credit Card (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/pay-fee",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "pay-fee"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"paymentMethod\": \"CREDIT_CARD\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Creates PENDING transaction + Stripe intent. Call /confirm-payment after Stripe succeeds.",
             "auth": {
               "type": "bearer",
               "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
@@ -4580,9 +4695,10 @@
                   "pm.test('Status is 200', function () {",
                   "  pm.expect(pm.response.code).to.equal(200);",
                   "});",
-                  "pm.test('Balance updated', function () {",
+                  "pm.test('Has clientSecret', function () {",
                   "  const data = pm.response.json().data;",
-                  "  pm.expect(data.balance).to.be.a('number');",
+                  "  pm.expect(data.clientSecret).to.be.a('string');",
+                  "  if (data.paymentIntentId) pm.collectionVariables.set('walletPaymentIntentId', data.paymentIntentId);",
                   "});"
                 ]
               }
@@ -4590,7 +4706,45 @@
           ]
         },
         {
-          "name": "Request Withdrawal (Provider)",
+          "name": "Confirm Fee Payment (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/confirm-payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "confirm-payment"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentIntentId\": \"{{walletPaymentIntentId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Flutter calls this AFTER Stripe payment sheet succeeds. Marks transaction COMPLETED and updates wallet balance.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Payment confirmed', function () {",
+                  "  pm.expect(pm.response.json().message).to.contain('confirmed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request Withdrawal - Cash (Provider)",
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
@@ -4604,7 +4758,7 @@
               "raw": "{\n  \"amount\": 425.00\n}",
               "options": {"raw": {"language": "json"}}
             },
-            "description": "Provider requests withdrawal of positive balance (from credit card earnings).",
+            "description": "Provider withdraws positive balance as cash (collect from supermarket). One step - balance deducted immediately. Omit paymentMethod (defaults to CASH).",
             "auth": {
               "type": "bearer",
               "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
@@ -4619,9 +4773,88 @@
                   "pm.test('Status is 200', function () {",
                   "  pm.expect(pm.response.code).to.equal(200);",
                   "});",
-                  "pm.test('Balance reduced', function () {",
+                  "pm.test('Receipt generated', function () {",
                   "  const data = pm.response.json().data;",
-                  "  pm.expect(data.balance).to.be.a('number');",
+                  "  pm.expect(data.referenceNumber).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request Withdrawal - Credit Card / Stripe (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "withdraw"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"paymentMethod\": \"CREDIT_CARD\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Step 1 of 2. Creates a Stripe (test mode) PaymentIntent + PENDING payout. Balance is NOT deducted yet. Returns clientSecret + paymentIntentId. Call 'Confirm Withdrawal' after the Stripe sheet succeeds.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Has clientSecret', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.clientSecret).to.be.a('string');",
+                  "  if (data.paymentIntentId) pm.collectionVariables.set('walletWithdrawIntentId', data.paymentIntentId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm Withdrawal (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/withdraw/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "wallet", "withdraw", "confirm"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentIntentId\": \"{{walletWithdrawIntentId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "description": "Step 2 of 2. Flutter calls this AFTER the Stripe payment sheet succeeds. Deducts the balance, marks the payout COMPLETED, and returns the receipt.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{providerAccessToken}}", "type": "string"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.test('Receipt generated', function () {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.referenceNumber).to.be.a('string');",
                   "});"
                 ]
               }
