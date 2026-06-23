@@ -22,8 +22,13 @@ import java.time.LocalDateTime;
 @Slf4j
 public class AdminProviderVerificationService {
 
+    private static final String NOTIF_APPROVED = "PROVIDER_APPROVED";
+    private static final String NOTIF_REJECTED = "PROVIDER_REJECTED";
+    private static final String DEEP_LINK = "/provider/verification";
+
     private final ServiceProviderProfileRepository providerProfileRepository;
     private final UserRepository userRepository;
+    private final AppNotificationService appNotificationService;
 
     /**
      * Get all pending provider profiles (paginated)
@@ -69,6 +74,13 @@ public class AdminProviderVerificationService {
         profile = providerProfileRepository.save(profile);
         log.info("Provider profile {} approved by admin {}", profileId, adminUserId);
 
+        appNotificationService.notify(
+                profile.getUser(),
+                NOTIF_APPROVED,
+                "You're verified",
+                "Your account has been approved. You can now send offers and start working.",
+                DEEP_LINK);
+
         return profile;
     }
 
@@ -98,6 +110,14 @@ public class AdminProviderVerificationService {
 
         profile = providerProfileRepository.save(profile);
         log.info("Provider profile {} rejected by admin {}", profileId, adminUserId);
+
+        appNotificationService.notify(
+                profile.getUser(),
+                NOTIF_REJECTED,
+                "Application rejected",
+                "Your account was not approved. Reason: " + rejectionReason
+                        + ". You can update your details and re-apply.",
+                DEEP_LINK);
 
         return profile;
     }
