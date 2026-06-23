@@ -25,6 +25,7 @@ public class ServiceOfferService {
     private final ServiceOfferRepository serviceOfferRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
+    private final com.sany3.graduation_project.Repositories.ServiceProviderProfileRepository providerProfileRepository;
 
     /**
      * Create a new offer
@@ -49,22 +50,28 @@ public class ServiceOfferService {
         ServiceRequest serviceRequest = serviceRequestRepository.findById(request.getRequestId())
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
 
-        // Check if provider is banned
+        // Gate: only admin-verified providers may send offers
+        ServiceProviderProfile providerProfile = providerProfileRepository.findByUserId(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found"));
+        if (providerProfile.isRejected()) {
+            throw new IllegalStateException("Your application was rejected: "
+                    + providerProfile.getRejectionReason() + ". Please update your details and re-apply.");
+        }
+        if (!providerProfile.isApproved()) {
+            throw new IllegalStateException("Your account is under review. You can send offers once an admin approves you.");
+        }
+
         if (provider.getBanned()) {
             throw new IllegalStateException("You are banned due to unpaid platform fees. Please pay your outstanding balance to continue sending offers.");
         }
-
-        // Check if provider already offered on this request
         if (serviceOfferRepository.existsByRequestIdAndProviderId(request.getRequestId(), providerId)) {
             throw new IllegalArgumentException("Provider already submitted an offer for this request");
         }
 
-        // Check if request is still open
         if (!serviceRequest.getStatus().toString().equals("OPEN")) {
             throw new IllegalStateException("Request is no longer open");
         }
 
-        // Check schedule conflict for scheduled requests
         if (serviceRequest.getScheduledAt() != null && request.getEstimatedTimeMinutes() != null) {
             LocalDateTime requestStart = serviceRequest.getScheduledAt();
             LocalDateTime requestEnd = requestStart.plusMinutes(request.getEstimatedTimeMinutes());
