@@ -24,8 +24,16 @@ public class UserMapper {
         }
 
         ServiceType serviceType = null;
+        String verificationStatus = null;
+        Boolean isVerified = null;
+        String rejectionReason = null;
         if (Hibernate.isInitialized(user.getServiceProviderProfile()) && user.getServiceProviderProfile() != null) {
-            serviceType = user.getServiceProviderProfile().getServiceType();
+            var profile = user.getServiceProviderProfile();
+            serviceType = profile.getServiceType();
+            isVerified = profile.getIsVerified();
+            verificationStatus = profile.getVerificationStatus() != null
+                    ? profile.getVerificationStatus().name() : null;
+            rejectionReason = profile.getRejectionReason();
         }
 
         return UserResponse.builder()
@@ -40,6 +48,9 @@ public class UserMapper {
                 .isActive(user.getIsActive())
                 .role(role)
                 .serviceType(serviceType)
+                .verificationStatus(verificationStatus)
+                .isVerified(isVerified)
+                .rejectionReason(rejectionReason)
                 .createdAt(user.getCreatedAt())
                 .build();
     }
