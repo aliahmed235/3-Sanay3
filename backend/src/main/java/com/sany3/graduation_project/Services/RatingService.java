@@ -28,11 +28,6 @@ public class RatingService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
     private final ServiceProviderProfileRepository providerProfileRepository;
-
-    /**
-     * Create rating after service completion
-     * Applies penalty system automatically
-     */
     public Rating createRating(Long customerId, Long requestId, CreateRatingRequest request) {
         log.info("Creating rating for request: {} by customer: {}", requestId, customerId);
 
@@ -79,10 +74,6 @@ public class RatingService {
 
         return rating;
     }
-
-    /**
-     * Get all ratings for a provider
-     */
     @Transactional(readOnly = true)
     public Page<Rating> getProviderRatings(Long providerId, int page, int size) {
         log.info("Fetching ratings for provider: {}", providerId);
