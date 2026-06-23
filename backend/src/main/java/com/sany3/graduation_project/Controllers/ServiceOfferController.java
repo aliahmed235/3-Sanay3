@@ -26,10 +26,6 @@ public class ServiceOfferController {
     private final ServiceOfferService serviceOfferService;
     private final ServiceOfferMapper serviceOfferMapper;
 
-    /**
-     * Submit an offer for a request
-     * POST /api/offers
-     */
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceOfferResponse>> createOffer(
             @Valid @RequestBody CreateServiceOfferRequest request,
@@ -42,11 +38,6 @@ public class ServiceOfferController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Offer submitted successfully"));
     }
-
-    /**
-     * Get all offers for a request (MUST BE BEFORE /{offerId})
-     * GET /api/offers/request/{requestId}?page=0&size=10
-     */
     @GetMapping("/request/{requestId}")
     public ResponseEntity<ApiResponse<Page<ServiceOfferResponse>>> getOffersForRequest(
             @PathVariable Long requestId,
@@ -61,11 +52,6 @@ public class ServiceOfferController {
 
         return ResponseEntity.ok(ApiResponse.success(response, "Offers retrieved"));
     }
-
-    /**
-     * Get provider's own offers (MUST BE BEFORE /{offerId})
-     * GET /api/offers/my-offers?page=0&size=10
-     */
     @GetMapping("/my-offers")
     public ResponseEntity<ApiResponse<Page<ServiceOfferResponse>>> getMyOffers(
             Authentication authentication,
@@ -79,11 +65,6 @@ public class ServiceOfferController {
 
         return ResponseEntity.ok(ApiResponse.success(response, "Your offers retrieved"));
     }
-
-    /**
-     * Get single offer by ID (MUST BE LAST - catches all remaining paths)
-     * GET /api/offers/{offerId}
-     */
     @GetMapping("/{offerId}")
     public ResponseEntity<ApiResponse<ServiceOfferResponse>> getOffer(
             @PathVariable Long offerId) {
@@ -93,11 +74,6 @@ public class ServiceOfferController {
 
         return ResponseEntity.ok(ApiResponse.success(response, "Offer retrieved"));
     }
-
-    /**
-     * Update offer (provider can update their pending offer)
-     * PUT /api/offers/{offerId}
-     */
     @PutMapping("/{offerId}")
     public ResponseEntity<ApiResponse<ServiceOfferResponse>> updateOffer(
             @PathVariable Long offerId,
@@ -111,10 +87,6 @@ public class ServiceOfferController {
         return ResponseEntity.ok(ApiResponse.success(response, "Offer updated"));
     }
 
-    /**
-     * Withdraw offer (provider withdraws their offer)
-     * DELETE /api/offers/{offerId}
-     */
     @DeleteMapping("/{offerId}")
     public ResponseEntity<ApiResponse<Void>> withdrawOffer(
             @PathVariable Long offerId,
