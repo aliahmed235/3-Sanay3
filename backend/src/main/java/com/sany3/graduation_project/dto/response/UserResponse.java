@@ -31,4 +31,9 @@ public class UserResponse {
     private ServiceType serviceType; // only for providers (CARPENTER, WATER, ELECTRICITY)
     private String profilePictureUrl;
     private LocalDateTime createdAt;
+
+    // Provider verification (null for customers — NON_NULL hides them)
+    private String verificationStatus; // PENDING | APPROVED | REJECTED
+    private Boolean isVerified;
+    private String rejectionReason;    // only present when REJECTED
 }
