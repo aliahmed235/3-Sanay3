@@ -17,18 +17,6 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * WebSocket Chat Controller
- * Handles real-time messaging via STOMP protocol
- *
- * Client Flow:
- * 1. Connect to /ws
- * 2. Subscribe to /topic/chatRoom/{roomId}
- * 3. Send message to /app/chat/send/{roomId}
- * 4. Receive message from /topic/chatRoom/{roomId}
- *
- * Note: Uses @Controller not @RestController because this handles WebSocket messages
- */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -38,19 +26,6 @@ public class ChatWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageMapper chatMessageMapper;
 
-    /**
-     * Handle incoming chat message
-     * Client sends to: /app/chat/send/{roomId}
-     *
-     * Example request body:
-     * {
-     *   "chatRoomId": 1,
-     *   "message": "I'm on my way",
-     *   "messageType": "TEXT"
-     * }
-     *
-     * Response broadcasts to: /topic/chatRoom/{roomId}
-     */
     @MessageMapping("/chat/send/{roomId}")
     public void sendMessage(
             @DestinationVariable Long roomId,
@@ -72,19 +47,14 @@ public class ChatWebSocketController {
                 sendErrorToUser(userName, validationError);
                 return;
             }
-
-            // Save message to database based on type
             ChatMessage savedMessage = processMessageByType(request, senderId);
 
             if (savedMessage == null) {
                 sendErrorToUser(userName, "Failed to save message");
                 return;
             }
-
-            // Convert to DTO
             ChatMessageDto messageDto = chatMessageMapper.toChatMessageDto(savedMessage);
 
-            // Broadcast to all users in room
             messagingTemplate.convertAndSend(
                     "/topic/chatRoom/" + roomId,
                     messageDto
@@ -97,10 +67,6 @@ public class ChatWebSocketController {
             sendErrorToUser(userName, "Error sending message: " + e.getMessage());
         }
     }
-
-    /**
-     * Process message based on type
-     */
     private ChatMessage processMessageByType(ChatMessageRequest request, Long senderId) {
         switch (request.getMessageType()) {
             case TEXT:
@@ -109,7 +75,6 @@ public class ChatWebSocketController {
                         senderId,
                         request.getMessage()
                 );
-
             case LOCATION:
                 return chatService.sendLocationMessage(
                         request.getChatRoomId(),
@@ -117,20 +82,17 @@ public class ChatWebSocketController {
                         request.getLatitude(),
                         request.getLongitude()
                 );
-
             case PHOTO:
                 return chatService.sendPhotoMessage(
                         request.getChatRoomId(),
                         senderId,
                         request.getMessage()
                 );
-
             default:
                 log.warn("Unknown message type: {}", request.getMessageType());
                 return null;
         }
     }
-
     private String validateMessageRequest(Long roomId, ChatMessageRequest request) {
         if (request == null) {
             return "Message payload is required";
@@ -156,14 +118,6 @@ public class ChatWebSocketController {
 
         return null;
     }
-
-    /**
-     * Handle typing indicator
-     * Client sends to: /app/chat/typing/{roomId}
-     *
-     * Notifies other users that someone is typing
-     * Do NOT broadcast back to sender
-     */
     @MessageMapping("/chat/typing/{roomId}")
     public void typingIndicator(
             @DestinationVariable Long roomId,
@@ -183,7 +137,6 @@ public class ChatWebSocketController {
                     .isTyping(true)
                     .build();
 
-            // Broadcast to room (excluding sender)
             messagingTemplate.convertAndSend(
                     "/topic/chatRoom/" + roomId + "/typing",
                     typingEvent
@@ -192,11 +145,6 @@ public class ChatWebSocketController {
             log.error("Error sending typing indicator: ", e);
         }
     }
-
-    /**
-     * Stop typing indicator
-     * Client sends to: /app/chat/stop-typing/{roomId}
-     */
     @MessageMapping("/chat/stop-typing/{roomId}")
     public void stopTyping(
             @DestinationVariable Long roomId,
@@ -225,10 +173,6 @@ public class ChatWebSocketController {
         }
     }
 
-    /**
-     * Handle user online
-     * Client sends to: /app/chat/user-online/{roomId}
-     */
     @MessageMapping("/chat/user-online/{roomId}")
     public void userOnline(
             @DestinationVariable Long roomId,
@@ -257,10 +201,6 @@ public class ChatWebSocketController {
         }
     }
 
-    /**
-     * Handle user offline
-     * Client sends to: /app/chat/user-offline/{roomId}
-     */
     @MessageMapping("/chat/user-offline/{roomId}")
     public void userOffline(
             @DestinationVariable Long roomId,
@@ -289,9 +229,6 @@ public class ChatWebSocketController {
         }
     }
 
-    /**
-     * Send error to specific user (private message)
-     */
     private void sendErrorToUser(String userName, String errorMessage) {
         messagingTemplate.convertAndSendToUser(
                 userName,
@@ -307,9 +244,6 @@ public class ChatWebSocketController {
         return principal == null ? null : principal.getName();
     }
 
-    /**
-     * Typing indicator event
-     */
     @lombok.Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
@@ -318,10 +252,6 @@ public class ChatWebSocketController {
         private Long userId;
         private Boolean isTyping;
     }
-
-    /**
-     * Online status event
-     */
     @lombok.Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
@@ -330,10 +260,6 @@ public class ChatWebSocketController {
         private Long userId;
         private Boolean isOnline;
     }
-
-    /**
-     * Error event
-     */
     @lombok.Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
