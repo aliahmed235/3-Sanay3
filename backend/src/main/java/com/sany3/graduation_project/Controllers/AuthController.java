@@ -71,9 +71,6 @@ public class AuthController {
         return ResponseEntity.ok(new SuccessResponse("Logout successful", true));
     }
 
-    /**
-     * Step 1: Request password reset — sends 6-digit code to email
-     */
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
@@ -83,9 +80,6 @@ public class AuthController {
                 "If an account exists with this email, a reset code has been sent."));
     }
 
-    /**
-     * Step 2: Verify the 6-digit code — returns a one-time reset token
-     */
     @PostMapping("/verify-reset-code")
     public ResponseEntity<ApiResponse<String>> verifyResetCode(
             @Valid @RequestBody VerifyResetCodeRequest request) {
@@ -95,9 +89,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(resetToken, "Code verified successfully"));
     }
 
-    /**
-     * Step 3: Reset password using the one-time reset token
-     */
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
