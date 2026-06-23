@@ -10,18 +10,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Chat Room Entity
- * Created automatically when customer accepts a provider's offer
- * Represents the chat between customer and provider for a specific request
- *
- * Example:
- *   Request: #456 (Gas problem)
- *   Customer: Ali Ahmed
- *   Provider: Hassan Khan
- *   → ChatRoom created linking all 3
- *   → Ali and Hassan can now message each other
- */
 @Entity
 @Table(name = "chat_rooms",
         uniqueConstraints = {
@@ -49,21 +37,9 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_id", nullable = false)
     private User provider;
-
-    /**
-     * When was this chat room created?
-     * Auto-set when offer is accepted
-     *
-     * Usually created ~5-10 minutes after request posted
-     */
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    /**
-     * All messages in this chat room
-     * One-to-Many: 1 room → many messages
-     */
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatMessage> messages;
 }
