@@ -13,18 +13,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Loads nudge_model_weights.json from the classpath and computes a
- * probability that a user should be nudged, using a logistic regression
- * model trained by train_nudge_model.py.
- *
- * Score = P(user should be nudged).
- * Features (must match the training script exactly, same order):
- *   opened_at_night, viewed_service_type, started_form, app_open_count
- *
- * If the weights file is missing the model is disabled and shouldNudge()
- * always returns true, so the rule engine keeps working unchanged.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +20,6 @@ public class MlScoringService {
 
     private final UserBehaviorEventRepository eventRepository;
 
-    // Model weights loaded once at startup
     private double[] coefficients;
     private double intercept;
     private double[] scalerMean;
@@ -70,14 +57,9 @@ public class MlScoringService {
             log.warn("Failed to load ML model: {} — ML scoring disabled", e.getMessage());
         }
     }
-
-    /**
-     * Returns true if the ML model says this user SHOULD be nudged.
-     * If the model isn't loaded, always returns true (falls back to rule engine only).
-     */
     public boolean shouldNudge(Long userId) {
         if (!modelLoaded) {
-            return true; // graceful fallback — rule engine decides
+            return true;
         }
 
         double[] features = extractFeatures(userId);
@@ -87,11 +69,6 @@ public class MlScoringService {
                 userId, String.format("%.2f", probability), threshold);
         return probability >= threshold;
     }
-
-    /**
-     * Extract the same 4 features the Python training script used.
-     * Must match exactly or the model gives wrong results.
-     */
     private double[] extractFeatures(Long userId) {
         List<UserBehaviorEvent> events = eventRepository.findByUserIdOrderByOccurredAtDesc(userId);
 
@@ -111,13 +88,10 @@ public class MlScoringService {
                 }
                 case SERVICE_TYPE_VIEWED     -> viewedServiceType = true;
                 case SERVICE_REQUEST_STARTED -> startedForm = true;
-                default -> {} // SERVICE_REQUEST_CREATED, NOTIFICATION_OPENED — not features
+                default -> {}
             }
         }
-
-        // Cap app_open_count at 5 — same as training query (LEAST(..., 5))
         double cappedOpenCount = Math.min(appOpenCount, 5);
-
         return new double[]{
             openedAtNight     ? 1.0 : 0.0,
             viewedServiceType ? 1.0 : 0.0,
@@ -125,15 +99,9 @@ public class MlScoringService {
             cappedOpenCount
         };
     }
-
-    /**
-     * Apply StandardScaler: (x - mean) / scale, then compute the linear
-     * combination with coefficients + intercept.
-     */
     private double dotProduct(double[] rawFeatures) {
         double result = intercept;
         for (int i = 0; i < rawFeatures.length; i++) {
-            // sklearn sets scale_ to 1.0 for zero-variance features, but guard anyway
             double scale = scalerScale[i] == 0.0 ? 1.0 : scalerScale[i];
             double scaled = (rawFeatures[i] - scalerMean[i]) / scale;
             result += coefficients[i] * scaled;
