@@ -29,10 +29,6 @@ public class RatingController {
     private final RatingService ratingService;
     private final RatingMapper ratingMapper;
 
-    /**
-     * Create a new rating for a completed servic
-     * POST /api/ratings/request/{requestId}
-     */
     @PostMapping("/request/{requestId}")
     public ResponseEntity<RatingResponse> createRating(
             @PathVariable Long requestId,
@@ -46,11 +42,6 @@ public class RatingController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-    /**
-     * Get all ratings for a provider
-     * GET /api/ratings/provider/{providerId}?page=0&size=10
-     */
     @GetMapping("/provider/{providerId}")
     public ResponseEntity<Page<RatingResponse>> getProviderRatings(
             @PathVariable Long providerId,
@@ -68,8 +59,6 @@ public class RatingController {
             @PathVariable Long requestId) {
         try {
             log.info("Fetching rating for request: {}", requestId);
-
-            // ✅ VALIDATION: Check request ID is valid
             if (requestId == null || requestId <= 0) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Invalid request ID"));
@@ -92,10 +81,6 @@ public class RatingController {
         }
     }
 
-    /**
-     * Get provider average rating
-     * GET /api/ratings/provider/{providerId}/average
-     */
     @GetMapping("/provider/{providerId}/average")
     public ResponseEntity<Double> getProviderAverageRating(
             @PathVariable Long providerId) {
@@ -105,10 +90,6 @@ public class RatingController {
         return ResponseEntity.ok(avgRating != null ? avgRating : 0.0);
     }
 
-    /**
-     * Get provider rating count
-     * GET /api/ratings/provider/{providerId}/count
-     */
     @GetMapping("/provider/{providerId}/count")
     public ResponseEntity<Long> getProviderRatingCount(
             @PathVariable Long providerId) {
@@ -117,11 +98,6 @@ public class RatingController {
         Long count = ratingService.getProviderRatingCount(providerId);
         return ResponseEntity.ok(count != null ? count : 0L);
     }
-
-    /**
-     * Get provider statistics (average, count, earnings)
-     * GET /api/ratings/provider/{providerId}/stats
-     */
     @GetMapping("/provider/{providerId}/stats")
     public ResponseEntity<ProviderRatingStats> getProviderStats(
             @PathVariable Long providerId) {
@@ -130,11 +106,6 @@ public class RatingController {
         ProviderRatingStats stats = ratingService.getProviderStats(providerId);
         return ResponseEntity.ok(stats);
     }
-
-    /**
-     * Get penalty counts for provider (transparency)
-     * GET /api/ratings/provider/{providerId}/penalties
-     */
     @GetMapping("/provider/{providerId}/penalties")
     public ResponseEntity<PenaltyStats> getPenaltyStats(
             @PathVariable Long providerId) {
@@ -149,17 +120,6 @@ public class RatingController {
 
         return ResponseEntity.ok(stats);
     }
-
-    // ══════════════════════════════════════════════════════════
-    //  PROVIDER PROFILE STATS (Customer-facing)
-    // ══════════════════════════════════════════════════════════
-
-    /**
-     * Get provider profile stats — for CUSTOMERS viewing a provider's profile
-     * GET /api/ratings/provider/{providerId}/profile-stats
-     *
-     * Returns: rating distribution, completion rate, on-time rate
-     */
     @GetMapping("/provider/{providerId}/profile-stats")
     public ResponseEntity<ApiResponse<ProviderProfileStatsResponse>> getProviderProfileStats(
             @PathVariable Long providerId) {
@@ -173,20 +133,6 @@ public class RatingController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-
-    // ══════════════════════════════════════════════════════════
-    //  PROVIDER ANALYTICS DASHBOARD (Provider-facing, own data only)
-    // ══════════════════════════════════════════════════════════
-
-    /**
-     * Get provider analytics dashboard — for PROVIDERS viewing their OWN dashboard
-     * GET /api/ratings/provider/my-analytics
-     *
-     * Security: uses the authenticated user's ID (provider can only see their own data)
-     *
-     * Returns: everything from profile-stats PLUS detailed breakdowns
-     * (which requests got which ratings, when late, what completed/didn't)
-     */
     @GetMapping("/provider/my-analytics")
     public ResponseEntity<ApiResponse<ProviderAnalyticsDashboardResponse>> getProviderAnalyticsDashboard(
             Authentication authentication) {
@@ -202,9 +148,6 @@ public class RatingController {
         }
     }
 
-    /**
-     * Inner class for penalty statistics response
-     */
     @lombok.Data
     @lombok.Builder
     public static class PenaltyStats {
