@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Provider-facing verification: see my own status, and re-apply after rejection.
@@ -24,12 +25,33 @@ public class ProviderVerificationService {
     private final ServiceProviderProfileRepository providerProfileRepository;
     private final UserRepository userRepository;
     private final ProviderDocumentRepository providerDocumentRepository;
+    private final CloudinaryStorageService cloudinaryStorageService;
 
     @Transactional(readOnly = true)
     public ProviderVerificationStatusResponse getMyStatus(Long userId) {
         ServiceProviderProfile profile = providerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found"));
         return toResponse(profile);
+    }
+
+    /**
+     * Multipart re-apply: provider uploads new photos directly. Any uploaded file
+     * is pushed to Cloudinary and its URL overrides the matching URL field, then
+     * the normal re-apply runs.
+     */
+    @Transactional
+    public ProviderVerificationStatusResponse reapply(Long userId, ReapplyProviderRequest request,
+                                                      MultipartFile profilePicture,
+                                                      MultipartFile criminalHistory) {
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            request.setProfileImageUrl(
+                    cloudinaryStorageService.upload(profilePicture, "sanay3/profile-pictures"));
+        }
+        if (criminalHistory != null && !criminalHistory.isEmpty()) {
+            request.setCriminalHistoryDocumentUrl(
+                    cloudinaryStorageService.upload(criminalHistory, "sanay3/criminal-history"));
+        }
+        return reapply(userId, request);
     }
 
     /**
