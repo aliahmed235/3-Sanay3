@@ -7,9 +7,11 @@ import com.sany3.graduation_project.dto.response.ProviderVerificationStatusRespo
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Provider-facing verification endpoints.
@@ -37,11 +39,30 @@ public class ProviderVerificationController {
     }
 
     /**
-     * PUT /api/provider/verification/reapply
-     * A rejected provider edits their info/documents and resubmits for review.
+     * PUT /api/provider/verification/reapply (multipart/form-data)
+     * A rejected provider edits their info and uploads new photos, then resubmits.
+     * Send text fields as form fields and optionally attach `profilePicture` and
+     * `criminalHistory` files.
      */
-    @PutMapping("/reapply")
-    public ResponseEntity<ApiResponse<ProviderVerificationStatusResponse>> reapply(
+    @PutMapping(value = "/reapply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ProviderVerificationStatusResponse>> reapplyMultipart(
+            @Valid @ModelAttribute ReapplyProviderRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "criminalHistory", required = false) MultipartFile criminalHistory,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        ProviderVerificationStatusResponse response = providerVerificationService
+                .reapply(userId, request, profilePicture, criminalHistory);
+        return ResponseEntity.ok(ApiResponse.success(response,
+                "Application resubmitted. It is now pending admin review."));
+    }
+
+    /**
+     * PUT /api/provider/verification/reapply (application/json)
+     * Same as above but with image URLs instead of file uploads.
+     */
+    @PutMapping(value = "/reapply", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<ProviderVerificationStatusResponse>> reapplyJson(
             @Valid @RequestBody ReapplyProviderRequest request,
             Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
